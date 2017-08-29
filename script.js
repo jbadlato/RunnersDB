@@ -1,4 +1,6 @@
 var map;
+var directionsService;
+var directionsDisplay;
 function initialize() {
 	var myLatlng = new google.maps.LatLng(47.6062,-122.3321);
 	var myOptions = {
@@ -9,8 +11,8 @@ function initialize() {
   	map = new google.maps.Map(document.getElementById("map"), myOptions);
 
   	// Set up directions objects:
-  	var directionsService = new google.maps.DirectionsService();
-  	var directionsDisplay = new google.maps.DirectionsRenderer({
+  	directionsService = new google.maps.DirectionsService();
+  	directionsDisplay = new google.maps.DirectionsRenderer({
   		suppressMarkers: true,
   		preserveViewport: true,
   		polylineOptions: {
@@ -33,7 +35,7 @@ function initialize() {
   		directionsService.route(request, function(response, status) {
   			if (status == google.maps.DirectionsStatus.OK) {
   				placeMarker(response.routes[0].legs[0].start_location);
-  				calculateAndDisplayRoute(directionsService, directionsDisplay);
+  				calculateAndDisplayRoute();
   			} else {
   				alert('Error placing marker');
   			}
@@ -44,8 +46,10 @@ function initialize() {
   	var card = document.getElementById('search_bar');
   	var input = document.getElementById('text_input');
   	var distance_display = document.getElementById('distance_display');
+  	var undo_button = document.getElementById('undo_button');
   	map.controls[google.maps.ControlPosition.TOP_RIGHT].push(card);
   	map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(distance_display);
+  	map.controls[google.maps.ControlPosition.LEFT_TOP].push(undo_button);
   	var autocomplete = new google.maps.places.Autocomplete(input);
   	autocomplete.bindTo('bounds', map);
   	autocomplete.addListener('place_changed', function() {
@@ -76,18 +80,21 @@ function placeMarker(location) {
       },
       map: map
  	 });
-  	markers.push({
-  		latitude: location.lat(),
-  		longitude: location.lng()
-  	});
+  	markers.push(marker);
 }
 
-function calculateAndDisplayRoute(directionsService, directionsDisplay) {
-	start = new google.maps.LatLng(markers[0].latitude, markers[0].longitude);
-	end = new google.maps.LatLng(markers[markers.length-1].latitude, markers[markers.length-1].longitude);
+function deleteLastMarker() {
+	var marker = markers.pop();
+	marker.setMap(null);
+	calculateAndDisplayRoute();
+}
+
+function calculateAndDisplayRoute() {
+	start = new google.maps.LatLng(markers[0].position.lat(), markers[0].position.lng());
+	end = new google.maps.LatLng(markers[markers.length-1].position.lat(), markers[markers.length-1].position.lng());
 	ways = [];
 	for (var i = 1; i < markers.length-1; i++) {
-		newWay = new google.maps.LatLng(markers[i].latitude, markers[i].longitude);
+		newWay = new google.maps.LatLng(markers[i].position.lat(), markers[i].position.lng());
 		ways.push({
 			location: newWay,
 			stopover: true
