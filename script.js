@@ -8,8 +8,21 @@ function initialize() {
   	}
   	map = new google.maps.Map(document.getElementById("map"), myOptions);
 
+  	var directionsService = new google.maps.DirectionsService();
   	google.maps.event.addListener(map, 'click', function(e) {
-    	placeMarker(e.latLng);
+  		var request = {
+  			origin: e.latLng,
+  			destination: e.latLng,
+  			travelMode: google.maps.DirectionsTravelMode.WALKING
+  		};
+
+  		directionsService.route(request, function(response, status) {
+  			if (status == google.maps.DirectionsStatus.OK) {
+  				placeMarker(response.routes[0].legs[0].start_location)
+  			} else {
+  				alert('Error placing marker');
+  			}
+  		})
   	});
 
   	var card = document.getElementById('search_bar');
@@ -37,7 +50,6 @@ function initialize() {
   	});
 }
 
-var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';
 function placeMarker(location) {
   var marker = new google.maps.Marker({
       position: location, 
