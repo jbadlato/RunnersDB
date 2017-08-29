@@ -3,14 +3,20 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title></title>
+    <title>Running Buddy</title>
     <meta name="viewport" content="initial-scale=1.0">
     <meta charset="utf-8">
     <link rel="stylesheet" type="text/css" href="style.css">
   </head>
   <body>
+  	<div class="search_bar" id="search_bar">
+  	  <div id="title">Search</div>
+  	  <div id="text_container">
+  	    <input id="text_input" type="text" placeholder="Jump to a location">
+  	  </div>
+  	</div>
     <div id="map">maps error</div>
     <script type="text/javascript" src="script.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXvHQwe44-dcP4-8-b90Ly2ut4LWbb4ug&callback=initialize" async defer></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXvHQwe44-dcP4-8-b90Ly2ut4LWbb4ug&libraries=places&callback=initialize"></script>
   </body>
 </html>
