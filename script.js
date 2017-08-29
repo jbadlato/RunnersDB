@@ -12,7 +12,13 @@ function initialize() {
   	var directionsService = new google.maps.DirectionsService();
   	var directionsDisplay = new google.maps.DirectionsRenderer({
   		suppressMarkers: true,
-  		preserveViewport: true
+  		preserveViewport: true,
+  		polylineOptions: {
+  			clickable: false,
+  			strokeColor: '#66f',
+  			strokeOpacity: 0.75,
+  			strokeWeight: 7
+  		}
   	});
   	directionsDisplay.setMap(map);
 
@@ -64,9 +70,9 @@ function placeMarker(location) {
       position: location, 
       icon: {
       	path: google.maps.SymbolPath.CIRCLE,
-      	scale: 1,
+      	scale: 3,
       	strokeColor: "#00F",
-      	strokeWeight: 3.0
+      	strokeWeight: 6
       },
       map: map
  	 });
@@ -92,7 +98,8 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay) {
 		destination: end,
 		waypoints: ways,
 		optimizeWaypoints: false,
-		travelMode: 'WALKING'
+		travelMode: 'WALKING',
+		unitSystem: google.maps.UnitSystem.METRIC
 	}, function(response, status) {
 		if (status === 'OK') {
 			directionsDisplay.setDirections(response);
