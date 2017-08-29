@@ -115,7 +115,7 @@ function calculateAndDisplayRoute() {
 			for (var i = 0; i < legs.length; i++) {
 				routeDistance += legs[i].distance.value;
 			}
-			document.getElementById('distance_display').innerHTML = routeDistance + ' m';
+			document.getElementById('distance_display').innerHTML = routeDistance/1000 + ' km<hr>' + Math.round(routeDistance/1609.34 * 1000)/1000 + ' mi';
 		} else {
 			alert('Directions request failed due to ' + status);
 		}
