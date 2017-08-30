@@ -6,7 +6,7 @@ var elevator
 function initialize() {
 	// Default location is Seattle
 	var myLatlng = new google.maps.LatLng(47.6062,-122.3321);
-	// Try to get user's location:
+	// Try to center to user's location:
 	if (navigator.geolocation) {
 		navigator.geolocation.getCurrentPosition(function(position) {
 			myLatlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
@@ -18,7 +18,8 @@ function initialize() {
 	var myOptions = {
     	zoom: 17,
     	center: myLatlng,
-    	mapTypeId: google.maps.MapTypeId.TERRAIN
+    	mapTypeId: google.maps.MapTypeId.TERRAIN,
+    	clickableIcons: false
   	}
   	map = new google.maps.Map(document.getElementById("map"), myOptions);
 
@@ -95,14 +96,15 @@ function initialize() {
 var markers = []; // stores the marker locations
 function placeMarker(location) {
   	var marker = new google.maps.Marker({
-      position: location, 
+      position: location,
       icon: {
       	path: google.maps.SymbolPath.CIRCLE,
       	scale: 3,
       	strokeColor: "#00F",
       	strokeWeight: 6
       },
-      map: map
+      map: map,
+      clickable: false
  	 });
   	markers.push(marker);
 }
