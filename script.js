@@ -1,8 +1,20 @@
 var map;
 var directionsService;
 var directionsDisplay;
+google.load('visualization', '1', {packages: ['columnchart']});
+var elevator
 function initialize() {
+	// Default location is Seattle
 	var myLatlng = new google.maps.LatLng(47.6062,-122.3321);
+	// Try to get user's location:
+	if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(function(position) {
+			myLatlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+			map.setCenter(myLatlng);
+		})
+	}
+
+	// Initialize map:
 	var myOptions = {
     	zoom: 17,
     	center: myLatlng,
@@ -23,8 +35,11 @@ function initialize() {
   		}
   	});
   	directionsDisplay.setMap(map);
+  	// Elevation Graphs:
+  	elevator = new google.maps.ElevationService;
 
-  	// Add listener to add markers to map where user clicks (snaps to nearest road):
+  	// Add listener to add markers to map & update distance and elevation data 
+  	// when user clicks somewhere on map (snaps to nearest road):
   	google.maps.event.addListener(map, 'click', function(e) {
   		var request = {
   			origin: e.latLng,
@@ -36,20 +51,27 @@ function initialize() {
   			if (status == google.maps.DirectionsStatus.OK) {
   				placeMarker(response.routes[0].legs[0].start_location);
   				calculateAndDisplayRoute();
+  				displayPathElevation();
   			} else {
   				alert('Error placing marker');
   			}
   		})
   	});
 
-  	// Add listener for the autocomplete "jump to location" search bar:
+  	// Position buttons, etc. on the map:
   	var card = document.getElementById('search_bar');
   	var input = document.getElementById('text_input');
   	var distance_display = document.getElementById('distance_display');
   	var undo_button = document.getElementById('undo_button');
+  	var elevation_chart = document.getElementById('elevation_chart');
+  	var show_elevation = document.getElementById('show_elevation');
   	map.controls[google.maps.ControlPosition.TOP_RIGHT].push(card);
   	map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(distance_display);
-  	map.controls[google.maps.ControlPosition.LEFT_TOP].push(undo_button);
+  	map.controls[google.maps.ControlPosition.TOP_LEFT].push(undo_button);
+  	map.controls[google.maps.ControlPosition.BOTTOM].push(elevation_chart);
+  	map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(show_elevation);
+
+  	// Add listener for the autocomplete "jump to location" search bar:
   	var autocomplete = new google.maps.places.Autocomplete(input);
   	autocomplete.bindTo('bounds', map);
   	autocomplete.addListener('place_changed', function() {
@@ -66,6 +88,8 @@ function initialize() {
   			map.setZoom(17);
   		}
   	});
+
+
 }
 
 var markers = []; // stores the marker locations
@@ -87,6 +111,7 @@ function deleteLastMarker() {
 	var marker = markers.pop();
 	marker.setMap(null);
 	calculateAndDisplayRoute();
+	displayPathElevation();
 }
 
 function calculateAndDisplayRoute() {
@@ -120,4 +145,57 @@ function calculateAndDisplayRoute() {
 			alert('Directions request failed due to ' + status);
 		}
 	});
+}
+
+elevationToggle = false;
+function showElevation() {
+	elevationToggle = !elevationToggle;
+	if (elevationToggle) {
+		document.getElementById('elevation_chart').style.display = 'block';
+	}
+	else {
+		document.getElementById('elevation_chart').style.display = 'none';
+	}
+}
+
+function displayPathElevation() {
+	if (markers.length <= 1) {
+		document.getElementById('elevation_chart').innerHTML = '';
+		return;
+	}
+	path = [];
+	for (var i = 0; i < markers.length; i++) {
+		path.push({lat: markers[i].position.lat(), lng: markers[i].position.lng()});
+	}
+	elevator.getElevationAlongPath({
+		'path': path,
+		'samples': 256
+	}, plotElevation);
+}
+
+function plotElevation(elevations, status) {
+	var chartDiv = document.getElementById('elevation_chart');
+	if (status !== 'OK') {
+		chartDiv.innerHTML = 'Cannot show elevation: request failed because ' + status;
+		return;
+	}
+	if (!elevationToggle) {
+		chartDiv.style.display = 'block';
+	}
+	var chart = new google.visualization.ColumnChart(chartDiv);
+	var data = new google.visualization.DataTable();
+	data.addColumn('string', 'Sample');
+	data.addColumn('number', 'Elevation');
+	for (var i = 0; i < elevations.length; i++) {
+		data.addRow(['', elevations[i].elevation]);
+	}
+	chart.draw(data, {
+		height: 150,
+		legend: 'none',
+		chartType: 'BarChart',
+		titleY: 'meters'
+	});
+	if (!elevationToggle) {
+		chartDiv.style.display = 'none';
+	}
 }
