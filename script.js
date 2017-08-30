@@ -66,11 +66,13 @@ function initialize() {
   	var undo_button = document.getElementById('undo_button');
   	var elevation_chart = document.getElementById('elevation_chart');
   	var show_elevation = document.getElementById('show_elevation');
+  	var clear_all = document.getElementById('clear_all');
   	map.controls[google.maps.ControlPosition.TOP_RIGHT].push(card);
   	map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(distance_display);
   	map.controls[google.maps.ControlPosition.TOP_LEFT].push(undo_button);
   	map.controls[google.maps.ControlPosition.BOTTOM].push(elevation_chart);
   	map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(show_elevation);
+  	map.controls[google.maps.ControlPosition.TOP_LEFT].push(clear_all);
 
   	// Add listener for the autocomplete "jump to location" search bar:
   	var autocomplete = new google.maps.places.Autocomplete(input);
@@ -114,6 +116,17 @@ function deleteLastMarker() {
 	marker.setMap(null);
 	calculateAndDisplayRoute();
 	displayPathElevation();
+}
+
+function clearAllMarkers() {
+	while (markers.length > 1) {
+		var marker = markers.pop();
+		marker.setMap(null);
+	}
+	calculateAndDisplayRoute();
+	displayPathElevation();
+	var marker = markers.pop();
+	marker.setMap(null);
 }
 
 function calculateAndDisplayRoute() {
