@@ -68,6 +68,6 @@ button {
 	width: 70%;
 }
 
-#path {
+#path, #avgLat, #avgLng, #dist, #elevChange, #init_path, #init_lat, #init_lng {
 	display: none;
 }

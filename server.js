@@ -52,7 +52,7 @@ var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('runners.db');
 db.serialize(function() {
 	db.run("CREATE TABLE IF NOT EXISTS logins (id INTEGER PRIMARY KEY, username TEXT, password TEXT)");
-	db.run("CREATE TABLE IF NOT EXISTS routes (id INTEGER PRIMARY KEY, username TEXT, route_name TEXT, path TEXT, location TEXT, elevation TEXT, distance TEXT)");
+	db.run("CREATE TABLE IF NOT EXISTS routes (id INTEGER PRIMARY KEY, username TEXT, route_name TEXT, path TEXT, latitude TEXT, longitude TEXT, distance TEXT, elevation TEXT)");
 })
 db.close();
 
@@ -150,17 +150,44 @@ app.get('/new_route', function (req, res) {
 });
 
 app.post('/new_route', function(req, res) {
-	sess = req.session;
+	var sess = req.session;
 	if (!req.body.path) {
 		res.render('new_route.ejs', {msg: 'Please draw a route.'});
 	} else if (req.body.path === '[]') {
 		res.render('new_route.ejs', {msg: 'Please draw a route.'});
 	} else {
 		db = new sqlite3.Database('runners.db');
-		db.run("INSERT INTO routes (username, route_name, path) VALUES (?, ?, ?)", [sess.username, req.body.route_name, req.body.path], function (req, res) {
-			db.close();
+		db.run("INSERT INTO routes (username, route_name, path, latitude, longitude, distance, elevation) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+			[sess.username, req.body.route_name, req.body.path, req.body.avgLat, req.body.avgLng, req.body.dist, req.body.elevChange], 
+			function (err) {
+				routeId = this.lastID;
+				db.close();
+				sess.message = 'New route created.';
+				res.redirect('/route/' + routeId);
 		});
-		sess.message = 'New route created.';
-		res.redirect('/forum');
 	}
 });
+
+
+app.get('/route/:routeId', function (req, res) {
+	sess = req.session;
+	if (sess.message) {
+		messageStore = sess.message;
+		sess.message = null;
+	}
+	routeId = req.params.routeId;
+	db = new sqlite3.Database('runners.db');
+	db.get("SELECT * FROM routes WHERE id = ?", routeId, function (err, row) {
+		db.close();
+		res.render('view_route.ejs', {
+			msg: messageStore,
+			'username': row.username,
+			'route_name': row.route_name,
+			initPath: row.path,
+			distance: row.distance,
+			elevation: row.elevation,
+			initLat: row.latitude,
+			initLng: row.longitude
+		})
+	});
+}); 

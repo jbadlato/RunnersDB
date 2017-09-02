@@ -8,20 +8,19 @@
     <script src="https://www.google.com/jsapi"></script>
   </head>
   <body>
-    <h2>Create a New Route</h2>
-    <p id="init_path"></p>
-    <form action="../new_route" method="post">
-      <p>Route Name:<input type="text" name="route_name"></p>
-      <input id="path" type="text" name="path" value="[]">
-      <input id="avgLat" type="text" name="avgLat" value="">
-      <input id="avgLng" type="text" name="avgLng" value="">
-      <input id="dist" type="text" name="dist" value="">
-      <input id="elevChange" name="elevChange" type="text" value="">
-      <input type="submit" value="Create Route">
-    </form>
-    <div id="server_message">
-      <p><%= msg%></p>
-    </div>
+    <p><%= msg%></p>
+    <p>Route Name: <%= route_name%></p>
+    <p>Submitted by User: <%= username%></p>
+    <p>Distance: <%= distance%> km</p>
+    <p>Max Elevation Change: <%= elevation%> m</p>
+    <p id="init_lat"><%= initLat%></p>
+    <p id="init_lng"><%= initLng%></p>
+    <p id="init_path"><%= initPath%></p>
+    <input id="path" name="path" type="text" value="[]">
+    <input id="avgLat" type="text" name="avgLat" value="">
+    <input id="avgLng" type="text" name="avgLng" value="">
+    <input id="dist" type="text" name="dist" value="">
+    <input id="elevChange" name="elevChange" type="text" value="">
     <div id="route_drawer">
       <div id="search_bar">
         <input id="text_input" type="text" placeholder="Jump to a location">
