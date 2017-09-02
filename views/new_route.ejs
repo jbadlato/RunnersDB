@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RunnersDB</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="../public/css/style.css">
+    <script src="https://www.google.com/jsapi"></script>
+  </head>
+  <body>
+    <h2>Create a New Route</h2>
+    <form action="../new_route" method="post">
+      <p>Route Name:<input type="text" name="route_name"></p>
+      <p>Path:<input id="path" type="text" name="path" value="[]"></p>
+      <input type="submit" value="Create Route">
+    </form>
+    <div id="server_message">
+      <p><%= msg%></p>
+    </div>
+    <div id="route_drawer">
+      <div id="search_bar">
+        <input id="text_input" type="text" placeholder="Jump to a location">
+      </div>
+      <div id="distance_display">0 km<hr>0 mi</div>
+      <div id="undo_button">
+        <button onclick="deleteLastMarker()">Undo</button>
+      </div>
+      <div id="clear_all">
+        <button onclick="clearAllMarkers()">Clear Route</button>
+      </div>
+      <div id="show_elevation">
+        <button onclick="showElevation()">Show Elevation</button>
+      </div>
+      <div id="map">maps error</div>
+      <div id="elevation_chart">test</div>
+    </div>
+    <script type="text/javascript" src="../draw_route.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXvHQwe44-dcP4-8-b90Ly2ut4LWbb4ug&libraries=places&callback=initialize"></script>
+  </body>
+</html>

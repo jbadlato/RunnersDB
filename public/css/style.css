@@ -2,8 +2,16 @@
 	font-family: Roboto;
 }
 
+#route_drawer {
+	height: 600px;
+	width: 95%;
+	margin-right: auto;
+	margin-left: auto;
+}
+
 #map {
 	height: 100%;
+	width: 100%;
 }
 
 html, body {
@@ -58,4 +66,8 @@ button {
 
 #elevation_chart {
 	width: 70%;
+}
+
+#path {
+	display: none;
 }

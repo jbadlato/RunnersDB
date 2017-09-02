@@ -111,6 +111,15 @@ function placeMarker(location) {
   	markers.push(marker);
 }
 
+function printMarkerLatLngs() {
+	path = [];
+	for (var i = 0; i < markers.length; i++) {
+		nextMarker = [markers[i].position.lat(), markers[i].position.lng()];
+		path.push(nextMarker);
+	}
+	document.getElementById('path').value = JSON.stringify(path);
+}
+
 function deleteLastMarker() {
 	var marker = markers.pop();
 	marker.setMap(null);
@@ -127,9 +136,14 @@ function clearAllMarkers() {
 	displayPathElevation();
 	var marker = markers.pop();
 	marker.setMap(null);
+	printMarkerLatLngs();
 }
 
 function calculateAndDisplayRoute() {
+	if (markers.length === 0) {
+		printMarkerLatLngs();
+		return;
+	}
 	start = new google.maps.LatLng(markers[0].position.lat(), markers[0].position.lng());
 	end = new google.maps.LatLng(markers[markers.length-1].position.lat(), markers[markers.length-1].position.lng());
 	ways = [];
@@ -160,6 +174,7 @@ function calculateAndDisplayRoute() {
 			alert('Directions request failed due to ' + status);
 		}
 	});
+	printMarkerLatLngs();
 }
 
 elevationToggle = false;
