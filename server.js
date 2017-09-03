@@ -162,6 +162,10 @@ app.post('/new_route', function(req, res) {
 			function (err) {
 				routeId = this.lastID;
 				db.close();
+				if (!req.body.route_name) {
+					defaultName = 'Route' + routeId;
+					db.run("UPDATE routes SET route_name=? WHERE id=?", [defaultName, routeId]);
+				}
 				sess.message = 'New route created.';
 				res.redirect('/route/' + routeId);
 		});
@@ -191,3 +195,26 @@ app.get('/route/:routeId', function (req, res) {
 		})
 	});
 }); 
+
+app.get('/user/:user', function (req, res) {
+	sess = req.session;
+	db = new sqlite3.Database('runners.db');
+	db.get("SELECT * FROM logins WHERE username = ?", req.params.user, function (err, row) {
+		if (row === undefined) {
+			res.send('<p>User does not exist</p>')
+		} else {
+			db.all("SELECT * FROM routes WHERE username = ?", req.params.user, function(err, rows) {
+				routeNames = [];
+				routeIds = [];
+				for (var i=0; i<rows.length; i++) {
+					routeNames.push(rows[i].route_name);
+					routeIds.push(rows[i].id);
+				}
+				res.render('view_user.ejs', {
+					'username': row.username,
+					'routeNames': routeNames
+				});
+			});
+		}
+	});
+});
