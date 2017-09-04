@@ -5,11 +5,22 @@
   <meta charset="utf-8">
 </head>
 <body>
-  <p><%= actionmsg%></p>
   <h1>Forums</h1>
-  <p>
-    <%= usermsg%>
-  </p>
+  <p><%= usermsg%></p>
   <a href="../new_route">New Route</a>
+  <h2>Browse routes:</h2>
+	<ul>
+	<% for(var i=0; i<rows.length; i++) {%>
+	<li>
+	  <a href="../route/<%= rows[i].id%>"><%= rows[i].route_name %></a>
+	  <ul>
+	    <li>Created by: <%= rows[i].username%></li>
+	    <li>Location: <%= rows[i].latitude%>, <%= rows[i].longitude%></li>
+	    <li>Distance: <%= rows[i].distance%> km</li>
+	    <li>Elevation Gain: <%= rows[i].elevation%> m</li>
+	  </ul>
+	</li>
+	<% } %>
+	</ul>
 </body>
 </html>

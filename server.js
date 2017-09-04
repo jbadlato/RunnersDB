@@ -19,6 +19,38 @@ app.listen(app.get('port'), function() {
 });
 */
 
+function clone(obj) {
+    // Handle the 3 simple types, and null or undefined
+    if (null == obj || "object" != typeof obj) return obj;
+
+    // Handle Date
+    if (obj instanceof Date) {
+        var copy = new Date();
+        copy.setTime(obj.getTime());
+        return copy;
+    }
+
+    // Handle Array
+    if (obj instanceof Array) {
+        var copy = [];
+        for (var q = 0, len = obj.length; q < len; q++) {
+        	copy[q] = clone(obj[q]);
+        }
+        return copy;
+    }
+
+    // Handle Object
+    if (obj instanceof Object) {
+        var copy = {};
+        for (var attr in obj) {
+            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+        }
+        return copy;
+    }
+
+    throw new Error("Unable to copy obj! Its type isn't supported.");
+}
+
 var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
@@ -129,14 +161,28 @@ app.post('/sign_in', function(req, res) {
 app.get('/forum', function(req, res) {
 	sess = req.session;
 	if (sess.message) {
-		messageStore = sess.message;
+		usermsg = sess.message;
 		sess.message = null;
-		res.render('forum.ejs', {usermsg: 'Signed in as: ' + sess.username, actionmsg: messageStore});
-	} else if (sess.username) {
-		res.render('forum.ejs', {usermsg: 'Signed in as: ' + sess.username, actionmsg: null});
-	} else {
-		res.render('forum.ejs', {usermsg: "Please sign in first.", actionmsg: null});
 	}
+	if (!sess.username) {
+		usermsg = 'Please sign in first.';
+	} else if (sess.username) {
+		usermsg = 'Signed in as: ' + sess.username;
+	}
+	var rowsStore;
+	db = new sqlite3.Database('runners.db');
+	db.all("SELECT * FROM routes LIMIT 10", function (err, rows) {
+		if (err) {
+			console.log(err);
+			db.close(function (err) {if (err) {console.log(err);}});
+		} else {
+			res.render('forum.ejs', {
+				'usermsg': usermsg,
+				'rows': rows
+			});
+			db.close(function (err) {if (err) {console.log(err);}});
+		}
+	});
 });
 
 app.get('/new_route', function (req, res) {
@@ -241,7 +287,6 @@ app.get('/user/:user', function (req, res) {
 				var savedRouteNames = [];
 				db.all("SELECT * FROM saved_routes a JOIN routes b ON a.route_id = b.id AND a.username = ?",
 					req.params.user, function (err, rows) {
-						console.log(rows);
 						for (var i=0; i<rows.length; i++) {
 							savedRouteIds.push(rows[i].route_id);
 							savedRouteNames.push(rows[i].route_name);
@@ -251,8 +296,6 @@ app.get('/user/:user', function (req, res) {
 					if (err) {
 						console.log(err);
 					} else {
-						console.log(savedRouteIds);
-						console.log(savedRouteNames);
 						res.render('view_user.ejs', {
 							'username': row.username,
 							'routeNames': routeNames,
