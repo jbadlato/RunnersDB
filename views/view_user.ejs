@@ -12,5 +12,11 @@
     <li><a href="../route/<%= routeIds[i]%>"><%= routeNames[i] %></a></li>
 	<% } %>
 	</ul>
+	<p>Saved Routes:</p>
+	<ul>
+	<% for(var i=0; i<savedRouteNames.length; i++) {%>
+	<li><a href="../route/<%= savedRouteIds[i]%>"><%= savedRouteNames[i] %></a></li>
+	<% } %>
+	</ul>
   </body>
 </html>

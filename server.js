@@ -112,7 +112,7 @@ app.post('/sign_in', function(req, res) {
 	sess = req.session;
 	// check if login is valid
 	db = new sqlite3.Database('runners.db');
-	db.all("SELECT * FROM logins WHERE username = ? and password = ?", [req.body.username, req.body.password], function (err, rows) {
+	db.all("SELECT * FROM logins WHERE username = ? AND password = ?", [req.body.username, req.body.password], function (err, rows) {
 		if (rows.length === 0) {
 			// sign in failed.
 			db.close();
@@ -161,11 +161,11 @@ app.post('/new_route', function(req, res) {
 			[sess.username, req.body.route_name, req.body.path, req.body.avgLat, req.body.avgLng, req.body.dist, req.body.elevChange], 
 			function (err) {
 				routeId = this.lastID;
-				db.close();
 				if (!req.body.route_name) {
 					defaultName = 'Route' + routeId;
 					db.run("UPDATE routes SET route_name=? WHERE id=?", [defaultName, routeId]);
 				}
+				db.close();
 				sess.message = 'New route created.';
 				res.redirect('/route/' + routeId);
 		});
@@ -196,6 +196,30 @@ app.get('/route/:routeId', function (req, res) {
 	});
 }); 
 
+app.post('/route/:routeId', function (req, res) {
+	sess = req.session;
+	if (!sess.username) {
+		sess.message = "Please sign in first.";
+		res.redirect('/sign_in');
+	} else {
+		routeId = req.params.routeId;
+		db = new sqlite3.Database('runners.db');
+		db.serialize(function() {
+			db.run("CREATE TABLE IF NOT EXISTS saved_routes (save_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER)");
+			db.get("SELECT * FROM saved_routes WHERE username=? AND route_id=?", [sess.username, routeId], function (err, row) {
+				if (row === undefined) {
+					db.run("INSERT INTO saved_routes (username, route_id) VALUES (?, ?)", [sess.username, routeId], function (err) {
+						if (err) {
+							console.log(err);
+						}
+						res.end();
+					});
+				}
+			});
+		});
+	}
+});
+
 app.get('/user/:user', function (req, res) {
 	sess = req.session;
 	db = new sqlite3.Database('runners.db');
@@ -203,16 +227,40 @@ app.get('/user/:user', function (req, res) {
 		if (row === undefined) {
 			res.send('<p>User does not exist</p>')
 		} else {
-			db.all("SELECT * FROM routes WHERE username = ?", req.params.user, function(err, rows) {
-				routeNames = [];
-				routeIds = [];
-				for (var i=0; i<rows.length; i++) {
-					routeNames.push(rows[i].route_name);
-					routeIds.push(rows[i].id);
-				}
-				res.render('view_user.ejs', {
-					'username': row.username,
-					'routeNames': routeNames
+			db.serialize(function() {
+				// get routes created by user:
+				var routeNames = [];
+				var routeIds = [];
+				db.all("SELECT * FROM routes WHERE username = ?", req.params.user, function(err, rows) {
+					for (var i=0; i<rows.length; i++) {
+						routeNames.push(rows[i].route_name);
+						routeIds.push(rows[i].id);
+					}
+				});
+				var savedRouteIds = [];
+				var savedRouteNames = [];
+				db.all("SELECT * FROM saved_routes a JOIN routes b ON a.route_id = b.id AND a.username = ?",
+					req.params.user, function (err, rows) {
+						console.log(rows);
+						for (var i=0; i<rows.length; i++) {
+							savedRouteIds.push(rows[i].route_id);
+							savedRouteNames.push(rows[i].route_name);
+						}
+					});
+				db.close(function(err) {
+					if (err) {
+						console.log(err);
+					} else {
+						console.log(savedRouteIds);
+						console.log(savedRouteNames);
+						res.render('view_user.ejs', {
+							'username': row.username,
+							'routeNames': routeNames,
+							'routeIds': routeIds,
+							'savedRouteNames': savedRouteNames,
+							'savedRouteIds': savedRouteIds
+						});
+					}
 				});
 			});
 		}
