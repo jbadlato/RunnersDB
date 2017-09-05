@@ -41,6 +41,28 @@
       <div id="map">maps error</div>
       <div id="elevation_chart">test</div>
     </div>
+    <div id="reviews_holder">
+      <p>Average Ratings:</p>
+      <ul>
+        <li>Difficulty: <%= avgDifficulty%></li>
+        <li>Safety: <%= avgSafety%></li>
+        <li>Scenery: <%= avgScenery%></li>
+      </ul>
+      <ul>
+        <% for(var i=0; i<rows.length; i++) {%>
+        <li>Review By: <%= rows[i].username%></li>
+          <ul>
+            <li>Comment: <%= rows[i].comment%></li>
+            <li>Difficulty: <%= rows[i].difficulty%></li>
+            <li>Safety: <%= rows[i].safety%></li>
+            <li>Scenery: <%= rows[i].scenery%></li>
+            <li>Upvotes: <%= rows[i].upvotes%></li>
+          </ul>
+        </li>
+        <% } %>
+      </ul>
+
+    </div>
     <script type="text/javascript" src="../draw_route.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXvHQwe44-dcP4-8-b90Ly2ut4LWbb4ug&libraries=places&callback=initialize"></script>
   </body>

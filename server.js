@@ -201,7 +201,7 @@ app.post('/new_route', function(req, res) {
 	var sess = req.session;
 	if (!req.body.path) {
 		res.render('new_route.ejs', {msg: 'Please draw a route.'});
-	} else if (req.body.path === '[]') {
+	} else if (req.body.path === '[]') { // Find a better way to do this without refreshing page & deleting users input.
 		res.render('new_route.ejs', {msg: 'Please draw a route.'});
 	} else {
 		db = new sqlite3.Database('runners.db');
@@ -244,18 +244,39 @@ app.get('/route/:routeId', function (req, res) {
 	}
 	routeId = req.params.routeId;
 	db = new sqlite3.Database('runners.db');
-	db.get("SELECT * FROM routes WHERE id = ?", routeId, function (err, row) {
+	var rowStore;
+	db.serialize(function() {
+		db.get("SELECT * FROM routes WHERE id = ?", routeId, function (err, row) {
+			rowStore = row;
+		});
+		db.all("SELECT * FROM reviews WHERE route_id = ? ORDER BY upvotes", routeId, function (err, rows) { // Limit/paginate this
+			var avgDifficulty = 0;
+			var avgSafety = 0;
+			var avgScenery = 0;
+			for (var i = 0; i < rows.length; i++) {
+				avgDifficulty += rows[i].difficulty;
+				avgSafety += rows[i].safety;
+				avgScenery += rows[i].scenery;
+			}
+			avgDifficulty = avgDifficulty / rows.length;
+			avgSafety = avgSafety / rows.length;
+			avgScenery = avgScenery / rows.length;
+			res.render('view_route.ejs', {
+				msg: messageStore,
+				'username': rowStore.username,
+				'route_name': rowStore.route_name,
+				initPath: rowStore.path,
+				distance: rowStore.distance,
+				elevation: rowStore.elevation,
+				initLat: rowStore.latitude,
+				initLng: rowStore.longitude,
+				'avgDifficulty': avgDifficulty,
+				'avgSafety': avgSafety,
+				'avgScenery': avgScenery,
+				'rows': rows
+			});
+		});
 		db.close();
-		res.render('view_route.ejs', {
-			msg: messageStore,
-			'username': row.username,
-			'route_name': row.route_name,
-			initPath: row.path,
-			distance: row.distance,
-			elevation: row.elevation,
-			initLat: row.latitude,
-			initLng: row.longitude
-		})
 	});
 }); 
 
