@@ -85,6 +85,8 @@ var db = new sqlite3.Database('runners.db');
 db.serialize(function() {
 	db.run("CREATE TABLE IF NOT EXISTS logins (id INTEGER PRIMARY KEY, username TEXT, password TEXT)");
 	db.run("CREATE TABLE IF NOT EXISTS routes (id INTEGER PRIMARY KEY, username TEXT, route_name TEXT, path TEXT, latitude TEXT, longitude TEXT, distance TEXT, elevation TEXT)");
+	db.run("CREATE TABLE IF NOT EXISTS saved_routes (save_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER)");
+	db.run("CREATE TABLE IF NOT EXISTS reviews (comment_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER, comment TEXT, difficulty INTEGER, safety INTEGER, scenery INTEGER, upvotes INTEGER)");
 })
 db.close();
 
@@ -203,6 +205,8 @@ app.post('/new_route', function(req, res) {
 		res.render('new_route.ejs', {msg: 'Please draw a route.'});
 	} else {
 		db = new sqlite3.Database('runners.db');
+		var routeId;
+		// Yes, this is callback hell, but I'm not sure there's a better way without additional libraries.
 		db.run("INSERT INTO routes (username, route_name, path, latitude, longitude, distance, elevation) VALUES (?, ?, ?, ?, ?, ?, ?)", 
 			[sess.username, req.body.route_name, req.body.path, req.body.avgLat, req.body.avgLng, req.body.dist, req.body.elevChange], 
 			function (err) {
@@ -211,10 +215,23 @@ app.post('/new_route', function(req, res) {
 					defaultName = 'Route' + routeId;
 					db.run("UPDATE routes SET route_name=? WHERE id=?", [defaultName, routeId]);
 				}
-				db.close();
-				sess.message = 'New route created.';
-				res.redirect('/route/' + routeId);
-		});
+			db.run("INSERT INTO reviews VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)",
+				[sess.username, routeId, req.body.comment, req.body.difficulty, req.body.safety, req.body.scenery, 0], 
+				function (err) {
+					console.log(routeId);
+					if (err) {
+						console.log(err);
+					} 
+					db.close(function(err) {
+					if (err) {
+						console.log(err)
+					} else {
+						sess.message = 'New route created.';
+						res.redirect('/route/' + routeId);
+					}
+					});
+				});
+			});
 	}
 });
 
@@ -251,7 +268,6 @@ app.post('/route/:routeId', function (req, res) {
 		routeId = req.params.routeId;
 		db = new sqlite3.Database('runners.db');
 		db.serialize(function() {
-			db.run("CREATE TABLE IF NOT EXISTS saved_routes (save_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER)");
 			db.get("SELECT * FROM saved_routes WHERE username=? AND route_id=?", [sess.username, routeId], function (err, row) {
 				if (row === undefined) {
 					db.run("INSERT INTO saved_routes (username, route_id) VALUES (?, ?)", [sess.username, routeId], function (err) {

@@ -12,6 +12,31 @@
     <p id="init_path"></p>
     <form action="../new_route" method="post">
       <p>Route Name:<input type="text" name="route_name"></p>
+      <p>Rate your route on the following criteria:</p>
+      <p>Difficulty: <br/>
+      1 <input type="radio" name="difficulty" value="1" required>
+      <input type="radio" name="difficulty" value="2">
+      <input type="radio" name="difficulty" value="3">
+      <input type="radio" name="difficulty" value="4">
+      <input type="radio" name="difficulty" value="5"> 5
+      <br/>
+      Safety: <br/>
+      1 <input type="radio" name="safety" value="1" required>
+      <input type="radio" name="safety" value="2">
+      <input type="radio" name="safety" value="3">
+      <input type="radio" name="safety" value="4">
+      <input type="radio" name="safety" value="5"> 5
+      <br/>
+      Scenery: <br/>
+      1 <input type="radio" name="scenery" value="1" required>
+      <input type="radio" name="scenery" value="2">
+      <input type="radio" name="scenery" value="3">
+      <input type="radio" name="scenery" value="4">
+      <input type="radio" name="scenery" value="5"> 5
+      </p>
+      <p>Comment/Description:</p>
+      <input type="text" name="comment" value="">
+      <!--Hidden parts of form:-->
       <input id="path" type="text" name="path" value="[]">
       <input id="avgLat" type="text" name="avgLat" value="">
       <input id="avgLng" type="text" name="avgLng" value="">
