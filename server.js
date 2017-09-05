@@ -276,7 +276,11 @@ app.get('/route/:routeId', function (req, res) {
 				'rows': rows
 			});
 		});
-		db.close();
+		db.close(function (err) {
+			if (err) {
+				console.log(err);
+			}
+		});
 	});
 }); 
 
@@ -295,7 +299,8 @@ app.post('/route/:routeId', function (req, res) {
 						if (err) {
 							console.log(err);
 						}
-						res.end();
+						sess.message = 'Route saved.';
+						res.redirect('/route/' + routeId);
 					});
 				}
 			});
