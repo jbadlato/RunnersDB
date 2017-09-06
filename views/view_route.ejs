@@ -41,6 +41,33 @@
       <div id="map">maps error</div>
       <div id="elevation_chart">test</div>
     </div>
+    <button onclick="toggleNewReview()">Add a Review</button>
+    <div id="new_review_container" style="display: none;">
+      <p>Difficulty: <br/>
+      1 <input type="radio" name="difficulty" value="1" required>
+      <input type="radio" name="difficulty" value="2">
+      <input type="radio" name="difficulty" value="3">
+      <input type="radio" name="difficulty" value="4">
+      <input type="radio" name="difficulty" value="5"> 5
+      <br/>
+      Safety: <br/>
+      1 <input type="radio" name="safety" value="1" required>
+      <input type="radio" name="safety" value="2">
+      <input type="radio" name="safety" value="3">
+      <input type="radio" name="safety" value="4">
+      <input type="radio" name="safety" value="5"> 5
+      <br/>
+      Scenery: <br/>
+      1 <input type="radio" name="scenery" value="1" required>
+      <input type="radio" name="scenery" value="2">
+      <input type="radio" name="scenery" value="3">
+      <input type="radio" name="scenery" value="4">
+      <input type="radio" name="scenery" value="5"> 5
+      </p>
+      <p>Comment/Description: <input id="comment" type="text" name="comment" value=""></p>
+      <button onclick="submitReview()">Submit Review</button>
+      <p id="error_message"></p>
+    </div>
     <div id="reviews_holder">
       <p>Average Ratings:</p>
       <ul>
@@ -61,8 +88,8 @@
         </li>
         <% } %>
       </ul>
-
     </div>
+    <script type="text/javascript" src="../public/js/view_route.js"></script>
     <script type="text/javascript" src="../public/js/draw_route.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXvHQwe44-dcP4-8-b90Ly2ut4LWbb4ug&libraries=places&callback=initialize"></script>
   </body>

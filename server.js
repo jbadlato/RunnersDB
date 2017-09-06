@@ -301,7 +301,7 @@ app.get('/route/:routeId', function (req, res) {
 			}
 		});
 	});
-}); 
+});
 
 app.post('/route/:routeId', function (req, res) {
 	sess = req.session;
@@ -325,6 +325,30 @@ app.post('/route/:routeId', function (req, res) {
 			});
 		});
 	}
+});
+
+app.post('/submitReview', function (req, res) {
+	sess = req.session;
+	if (!sess.username) {
+		sess.message = "Please sign in before submitting a review.";
+		return res.send('Sign In');
+	}
+	var username = sess.username;
+	var route_id = parseInt(req.body.route_id);
+	var comment = req.body.comment;
+	var difficulty = parseInt(req.body.difficulty);
+	var safety = parseInt(req.body.safety);
+	var scenery = parseInt(req.body.scenery);
+	db = new sqlite3.Database('runners.db');
+	db.run("INSERT INTO reviews (username, route_id, comment, difficulty, safety, scenery, upvotes) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+		[username, route_id, comment, difficulty, safety, scenery, 0],
+		function (err) {
+			if (err) {
+				console.log(err);
+				res.send('Failure');
+			}
+			res.send('Success');
+		});
 });
 
 app.get('/user/:user', function (req, res) {
