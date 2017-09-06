@@ -171,17 +171,9 @@ app.post('/browse', function(req, res) {
 	var minElev = req.body.minElev;
 	var maxElev = req.body.maxElev;
 	var sortBy, query;
+	var offset = ((req.body.offset - 1) * 10).toString();
 	if (req.body.browseby === 'rating') {
-		query = "SELECT routes.*, (AVG(reviews.difficulty) + AVG(reviews.safety) + AVG(reviews.scenery))/3 AS overall_rating, " + 
-			"AVG (reviews.difficulty) AS average_difficulty, " +
-			"AVG (reviews.safety) AS average_safety, " +
-			"AVG (reviews.scenery) AS average_scenery " +
-			"FROM routes " +
-			"INNER JOIN reviews ON routes.id = reviews.route_id " +
-			"WHERE routes.latitude BETWEEN ? AND ? AND routes.longitude BETWEEN ? AND ? " +
-			"AND routes.distance BETWEEN ? AND ? AND routes.elevation BETWEEN ? AND ? " +
-			"GROUP BY id " +
-			"ORDER BY overall_rating DESC LIMIT 10";
+		sortBy = 'overall_rating DESC';
 	} else if (req.body.browseby === 'old') {
 		sortBy = 'id ASC';
 	} else if (req.body.browseby === 'new') {
@@ -194,11 +186,16 @@ app.post('/browse', function(req, res) {
 		console.log('invalid browseby parameter.');
 		return;
 	}
-	if (req.body.browseby !== 'rating') {
-		query = "SELECT * FROM routes WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? " +
-				"AND distance BETWEEN ? AND ? AND elevation BETWEEN ? AND ? " +
-				"ORDER BY " + sortBy + " LIMIT 10";
-		}
+	query = "SELECT routes.*, (AVG(reviews.difficulty) + AVG(reviews.safety) + AVG(reviews.scenery))/3 AS overall_rating, " + 
+		"AVG (reviews.difficulty) AS average_difficulty, " +
+		"AVG (reviews.safety) AS average_safety, " +
+		"AVG (reviews.scenery) AS average_scenery " +
+		"FROM routes " +
+		"INNER JOIN reviews ON routes.id = reviews.route_id " +
+		"WHERE routes.latitude BETWEEN ? AND ? AND routes.longitude BETWEEN ? AND ? " +
+		"AND routes.distance BETWEEN ? AND ? AND routes.elevation BETWEEN ? AND ? " +
+		"GROUP BY id " +
+		"ORDER BY " + sortBy + " LIMIT 10 OFFSET " + offset;
 	db = new sqlite3.Database('runners.db');
 	db.all(query, [minLat, maxLat, minLng, maxLng, minDist, maxDist, minElev, maxElev], function (err, rows) {	
 		if (err) {

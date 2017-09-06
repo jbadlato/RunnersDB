@@ -59,13 +59,22 @@ var createPreview = function (row, browseContainer, resolve) {
 	});
 }
 
-function setBrowse(browseType) {
+var page = 0;
+function setBrowse() {
 	var xhttp = new XMLHttpRequest();
 	var searchRadiusSelector = document.getElementsByName('searchRadius');
 	var searchRadius;
 	for (var i = 0; i < searchRadiusSelector.length; i++) {
 		if (searchRadiusSelector[i].checked) {
 			searchRadius = parseInt(searchRadiusSelector[i].value);
+			break;
+		}
+	}
+	var browseBySelector = document.getElementsByName('browseBy');
+	var browseType;
+	for (var i = 0; i < browseBySelector.length; i++) {
+		if (browseBySelector[i].checked) {
+			browseType = browseBySelector[i].value;
 			break;
 		}
 	}
@@ -82,7 +91,8 @@ function setBrowse(browseType) {
 		'minDist': minDist,
 		'maxDist': maxDist,
 		'minElev': minElev,
-		'maxElev': maxElev
+		'maxElev': maxElev,
+		offset: page
 	}
 	xhttp.setRequestHeader("Content-Type", "application/json");
 	xhttp.send(JSON.stringify(params));
@@ -99,4 +109,20 @@ function setBrowse(browseType) {
 			})();
 		}
 	}
+}
+
+var nextPage = function () {
+	page++;
+	setBrowse();
+}
+
+var prevPage = function () {
+	page--;
+	setBrowse();
+}
+
+var newSearch = function () {
+	document.getElementById('browse_container').innerHTML = '';
+	page = 1;
+	setBrowse();
 }

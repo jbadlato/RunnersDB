@@ -31,15 +31,22 @@
   At most: <input type="number" id="max_elev" value="9999999999"> m
   </p>
   <br/>
-  <p>Sort By: </p>
-  <button onclick="setBrowse('old')">Oldest</button>
-  <button onclick="setBrowse('new')">Newest</button>
-  <button onclick="setBrowse('distance')">Distance</button>
-  <button onclick="setBrowse('elevation')">Elevation</button>
-  <button onclick="setBrowse('rating')">Rating</button>
+  <p>Sort By: </p>  
+  <div id=browseBySelector>
+    <p>
+      <input type="radio" name="browseBy" value="old">Oldest
+      <input type="radio" name="browseBy" value="new" checked="checked">Newest
+      <input type="radio" name="browseBy" value="distance">Distance
+      <input type="radio" name="browseBy" value="elevation">Elevation
+      <input type="radio" name="browseBy" value="rating">Rating
+    </p>
+  </div>
+  <button onclick="newSearch()">Search</button>
   <ul id="browse_container">
 
   </ul>
+  <button onclick="prevPage()">Previous Page</button>
+  <button onclick="nextPage()">Next Page</button>
   <script type="text/javascript" src="../public/js/browse.js"></script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXvHQwe44-dcP4-8-b90Ly2ut4LWbb4ug&libraries=places&callback=initialize"></script>
 </body>
