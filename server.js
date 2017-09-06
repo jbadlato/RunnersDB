@@ -156,59 +156,47 @@ app.post('/browse', function(req, res) {
 	} else if (sess.username) {
 		usermsg = 'Signed in as: ' + sess.username;
 	}
-	if (Object.keys(req.body).length === 0) {	
-		res.render('browse.ejs', {
-			'usermsg': usermsg
-		});
-	} else {
-		// Approximate conversions:
-		// Latitude: 1 deg = 110.574 km
-		// Longitude: 1 deg = 111.320*cos(latitude) km
-		var searchLat = parseFloat(req.body.searchLat);
-		var searchLng = parseFloat(req.body.searchLng);
-		var searchRad = parseFloat(req.body.searchRadius);
-		var minLat = searchLat - searchRad / 110.574;
-		var maxLat = searchLat + searchRad / 110.574;
-		var minLng = searchLng - Math.abs(searchRad / (111.320 * Math.cos(searchLat/180*Math.PI)));
-		var maxLng = searchLng + Math.abs(searchRad / (111.320 * Math.cos(searchLat/180*Math.PI)));
-		var minDist = req.body.minDist;
-		var maxDist = req.body.maxDist;
-		var minElev = req.body.minElev;
-		var maxElev = req.body.maxElev;
-	}
-	db = new sqlite3.Database('runners.db');
+	// Approximate conversions:
+	// Latitude: 1 deg = 110.574 km
+	// Longitude: 1 deg = 111.320*cos(latitude) km
+	var searchLat = parseFloat(req.body.searchLat);
+	var searchLng = parseFloat(req.body.searchLng);
+	var searchRad = parseFloat(req.body.searchRadius);
+	var minLat = searchLat - searchRad / 110.574;
+	var maxLat = searchLat + searchRad / 110.574;
+	var minLng = searchLng - Math.abs(searchRad / (111.320 * Math.cos(searchLat/180*Math.PI)));
+	var maxLng = searchLng + Math.abs(searchRad / (111.320 * Math.cos(searchLat/180*Math.PI)));
+	var minDist = req.body.minDist;
+	var maxDist = req.body.maxDist;
+	var minElev = req.body.minElev;
+	var maxElev = req.body.maxElev;
+	var sortBy;
 	if (req.body.browseby === 'old') {
-		db.all("SELECT * FROM routes WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? " +
-			"AND distance BETWEEN ? AND ? AND elevation BETWEEN ? AND ? " +
-			"ORDER BY id ASC LIMIT 10",
-			[minLat, maxLat, minLng, maxLng, minDist, maxDist, minElev, maxElev],
-			function (err, rows) {	
-				if (err) {
-					console.log(err);
-					db.close(function (err) {if (err) {console.log(err);}});
-				} else {
-					db.close(function (err) {if (err) {console.log(err);}});
-					res.send(JSON.stringify(rows));
-				}
-			});
+		sortBy = 'id ASC';
 	} else if (req.body.browseby === 'new') {
-		db.all("SELECT * FROM routes WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? " + 
-			"AND distance BETWEEN ? AND ? AND elevation BETWEEN ? AND ? " +
-			"ORDER BY id DESC LIMIT 10",
-			[minLat, maxLat, minLng, maxLng, minDist, maxDist, minElev, maxElev],
-			function (err, rows) {
-				if (err) {
-					console.log(err);
-					db.close(function (err) {if (err) {console.log(err);}});
-				} else {
-					db.close(function (err) {if (err) {console.log(err);}});
-					res.send(JSON.stringify(rows));
-				}
-			});
+		sortBy = 'id DESC';
 	} else if (req.body.browseby === 'distance') {
-		db.all("")
+		sortBy = 'distance ASC';
+	} else if (req.body.browseby === 'elevation') {
+		sortBy = 'elevation ASC';
+	} else {
+		console.log('invalid browseby parameter.');
+		return;
 	}
+	var query = "SELECT * FROM routes WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? " +
+			"AND distance BETWEEN ? AND ? AND elevation BETWEEN ? AND ? " +
+			"ORDER BY " + sortBy + " LIMIT 10"
+	db = new sqlite3.Database('runners.db');
+	db.all(query, [minLat, maxLat, minLng, maxLng, minDist, maxDist, minElev, maxElev], function (err, rows) {	
+		if (err) {
+			console.log(err);
+			db.close(function (err) {if (err) {console.log(err);}});
+		} else {
+			res.send(JSON.stringify(rows));
+		}
+	});
 });
+
 app.get('/new_route', function (req, res) {
 	sess = req.session;
 	if (!sess.username) {
@@ -240,7 +228,6 @@ app.post('/new_route', function(req, res) {
 			db.run("INSERT INTO reviews VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)",
 				[sess.username, routeId, req.body.comment, req.body.difficulty, req.body.safety, req.body.scenery, 0], 
 				function (err) {
-					console.log(routeId);
 					if (err) {
 						console.log(err);
 					} 

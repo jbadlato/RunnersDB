@@ -14,8 +14,8 @@ var searchLng = 0;
 function codeAddress() {
   var address = document.getElementById("address").value;
   geocoder.geocode( { 'address': address }, function(results, status) {
-    if (!results[0]) {
-        console.log('no results found');
+    if (!results) {
+        console.log('no results found during geocode');
     } else {
         searchLat = results[0].geometry.location.lat();
         searchLng = results[0].geometry.location.lng();
@@ -24,16 +24,21 @@ function codeAddress() {
   });
 }
 
-var createPreview = function (row, browseContainer) {
+var createPreview = function (row, browseContainer, resolve) {
 	// get location as a city/town/locality:
 	var latLng = new google.maps.LatLng(row.latitude, row.longitude);
 	var location = 'Not found';
 	var preview;
 	geocoder.geocode({location: latLng}, function (results, status) {
-		for (var i = 0; i < results.length; i++) {
-			if (results[i].types.indexOf('locality') !== -1 || results.indexOf('neighborhood') !== -1) {
-				location = results[i].formatted_address;
-				break;
+		if (!results) {
+			console.log('no results found during reverse geocode');
+			location = row.latitude + ', ' + row.longitude;
+		} else {
+			for (var i = 0; i < results.length; i++) {
+				if (results[i].types.indexOf('locality') !== -1 || results.indexOf('neighborhood') !== -1) {
+					location = results[i].formatted_address;
+					break;
+				}
 			}
 		}
 		preview = "<li>" +
@@ -46,6 +51,7 @@ var createPreview = function (row, browseContainer) {
 					"</ul>" + 
 					"</li>";
 		browseContainer.innerHTML += preview;
+		resolve();
 	});
 }
 
@@ -81,9 +87,12 @@ function setBrowse(browseType) {
 			rows = JSON.parse(this.responseText);
 			browseContainer = document.getElementById('browse_container');
 			browseContainer.innerHTML = '';
-			for (var i = 0; i < rows.length; i++) {
-				createPreview(rows[i], browseContainer);
-			}
+			(async function loop() {
+				for (var i = 0; i < rows.length; i++) {
+					blength = browseContainer.innerHTML.length;
+					await new Promise(resolve => createPreview(rows[i], browseContainer, resolve));
+				}
+			})();
 		}
 	}
 }
