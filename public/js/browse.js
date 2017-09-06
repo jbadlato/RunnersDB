@@ -61,6 +61,11 @@ var createPreview = function (row, browseContainer, resolve) {
 
 var page = 0;
 function setBrowse() {
+	if (page === 1) {
+		document.getElementById('prev_button').style = "display: none;";
+	} else {
+		document.getElementById('prev_button').style = "display: inline-block;";
+	}
 	var xhttp = new XMLHttpRequest();
 	var searchRadiusSelector = document.getElementsByName('searchRadius');
 	var searchRadius;
@@ -99,6 +104,11 @@ function setBrowse() {
 	xhttp.onreadystatechange = function () {
 		if (this.readyState === 4 && this.status === 200) {
 			rows = JSON.parse(this.responseText);
+			if (rows.length < 10) {
+				document.getElementById('next_button').style = "display: none;";
+			} else {
+				document.getElementById('next_button').style = "display: inline-block";
+			}
 			browseContainer = document.getElementById('browse_container');
 			browseContainer.innerHTML = '';
 			(async function loop() {
