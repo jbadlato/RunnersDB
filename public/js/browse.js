@@ -30,14 +30,12 @@ var createPreview = function (row, browseContainer) {
 	var location = 'Not found';
 	var preview;
 	geocoder.geocode({location: latLng}, function (results, status) {
-		console.log(results);
 		for (var i = 0; i < results.length; i++) {
 			if (results[i].types.indexOf('locality') !== -1 || results.indexOf('neighborhood') !== -1) {
 				location = results[i].formatted_address;
 				break;
 			}
 		}
-		console.log(location);
 		preview = "<li>" +
 					"<a href='../route/" + row.id + "'>" + row.route_name + "</a>" +
 					"<ul>" +
@@ -61,8 +59,23 @@ function setBrowse(browseType) {
 			break;
 		}
 	}
-	xhttp.open("GET", "/browse?browseby=" + browseType + "&searchLat=" + searchLat + "&searchLng=" + searchLng + "&searchRadius=" + searchRadius, true);
-	xhttp.send();
+	var minDist = document.getElementById('min_dist').value;
+	var maxDist = document.getElementById('max_dist').value;
+	var minElev = document.getElementById('min_elev').value;
+	var maxElev = document.getElementById('max_elev').value;
+	xhttp.open("POST", "/browse");
+	params = {
+		browseby: browseType,
+		'searchLat': searchLat,
+		'searchLng': searchLng,
+		'searchRadius': searchRadius,
+		'minDist': minDist,
+		'maxDist': maxDist,
+		'minElev': minElev,
+		'maxElev': maxElev
+	}
+	xhttp.setRequestHeader("Content-Type", "application/json");
+	xhttp.send(JSON.stringify(params));
 	xhttp.onreadystatechange = function () {
 		if (this.readyState === 4 && this.status === 200) {
 			rows = JSON.parse(this.responseText);

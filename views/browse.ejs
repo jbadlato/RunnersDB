@@ -13,14 +13,30 @@
   <p id="currSearchLoc">Current Search Location: None</p>
   <p id="search_radius">Search Radius: </p>
   <div id=searchRadiusSelector>
-    <input type="radio" name="searchRadius" value="5">5 km
-    <input type="radio" name="searchRadius" value="10" checked="checked">10 km
-    <input type="radio" name="searchRadius" value="25">25 km
-    <input type="radio" name="searchRadius" value="50">50 km
+    <p>
+      <input type="radio" name="searchRadius" value="5">5 km
+      <input type="radio" name="searchRadius" value="10" checked="checked">10 km
+      <input type="radio" name="searchRadius" value="25">25 km
+      <input type="radio" name="searchRadius" value="50">50 km
+    </p>
   </div>
   <br/>
+  <p>Distance: 
+  	At least: <input type="number" id="min_dist" value="0"> km |
+  	At most: <input type="number" id="max_dist" value="9999999999"> km
+  </p>
+  <br/>
+  <p>Elevation: 
+  At least: <input type="number" id="min_elev" value="0"> m
+  At most: <input type="number" id="max_elev" value="9999999999"> m
+  </p>
+  <br/>
+  <p>Sort By: </p>
   <button onclick="setBrowse('old')">Oldest</button>
   <button onclick="setBrowse('new')">Newest</button>
+  <button onclick="setBrowse('distance')">Distance</button>
+  <button onclick="setBrowse('elevation')">Elevation</button>
+  <button onclick="setBrowse('rating')">Rating</button>
   <ul id="browse_container">
 
   </ul>
