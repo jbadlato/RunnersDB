@@ -48,6 +48,10 @@ var createPreview = function (row, browseContainer, resolve) {
 					"<li>Location: " + location + "</li>" +
 					"<li>Distance: " + row.distance + " km" + "</li>" +
 					"<li>Elevation: " + row.elevation + " m" + "</li>" +
+					"<li>Overall Rating: " + Math.round(row.overall_rating*100)/100 + "</li>" +
+					"<li>Difficulty: " + Math.round(row.average_difficulty*100)/100 + "</li>" + 
+					"<li>Safety: " + Math.round(row.average_safety*100)/100 + "</li>" +
+					"<li>Scenery: " + Math.round(row.average_scenery*100)/100 + "</li>" +
 					"</ul>" + 
 					"</li>";
 		browseContainer.innerHTML += preview;
