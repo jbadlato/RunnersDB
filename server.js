@@ -19,38 +19,6 @@ app.listen(app.get('port'), function() {
 });
 */
 
-function clone(obj) {
-    // Handle the 3 simple types, and null or undefined
-    if (null == obj || "object" != typeof obj) return obj;
-
-    // Handle Date
-    if (obj instanceof Date) {
-        var copy = new Date();
-        copy.setTime(obj.getTime());
-        return copy;
-    }
-
-    // Handle Array
-    if (obj instanceof Array) {
-        var copy = [];
-        for (var q = 0, len = obj.length; q < len; q++) {
-        	copy[q] = clone(obj[q]);
-        }
-        return copy;
-    }
-
-    // Handle Object
-    if (obj instanceof Object) {
-        var copy = {};
-        for (var attr in obj) {
-            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
-        }
-        return copy;
-    }
-
-    throw new Error("Unable to copy obj! Its type isn't supported.");
-}
-
 var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
@@ -84,9 +52,10 @@ var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('runners.db');
 db.serialize(function() {
 	db.run("CREATE TABLE IF NOT EXISTS logins (id INTEGER PRIMARY KEY, username TEXT, password TEXT)");
-	db.run("CREATE TABLE IF NOT EXISTS routes (id INTEGER PRIMARY KEY, username TEXT, route_name TEXT, path TEXT, latitude TEXT, longitude TEXT, distance TEXT, elevation TEXT)");
+	db.run("CREATE TABLE IF NOT EXISTS routes (id INTEGER PRIMARY KEY, username TEXT, route_name TEXT, path TEXT, latitude REAL, longitude REAL, distance REAL, elevation REAL)");
 	db.run("CREATE TABLE IF NOT EXISTS saved_routes (save_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER)");
 	db.run("CREATE TABLE IF NOT EXISTS reviews (comment_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER, comment TEXT, difficulty INTEGER, safety INTEGER, scenery INTEGER, upvotes INTEGER)");
+	db.run("CREATE INDEX IF NOT EXISTS idx_location ON routes (latitude, longitude)");
 })
 db.close();
 
@@ -155,12 +124,12 @@ app.post('/sign_in', function(req, res) {
 			// sign the user in.
 			sess.username = req.body.username;
 			db.close();
-			res.redirect('/forum');
+			res.redirect('/browse');
 		}
 	});
 });
 
-app.get('/forum', function(req, res) {
+app.get('/browse', function(req, res) {
 	sess = req.session;
 	if (sess.message) {
 		usermsg = sess.message;
@@ -171,20 +140,46 @@ app.get('/forum', function(req, res) {
 	} else if (sess.username) {
 		usermsg = 'Signed in as: ' + sess.username;
 	}
-	var rowsStore;
+	if (Object.keys(req.query).length === 0) {	
+		res.render('browse.ejs', {
+			'usermsg': usermsg
+		});
+	} else {
+		// Approximate conversions:
+		// Latitude: 1 deg = 110.574 km
+		// Longitude: 1 deg = 111.320*cos(latitude) km
+		var searchLat = parseFloat(req.query['searchLat']);
+		var searchLng = parseFloat(req.query['searchLng']);
+		var searchRad = parseFloat(req.query['searchRadius']);
+		var minLat = searchLat - searchRad / 110.574;
+		var maxLat = searchLat + searchRad / 110.574;
+		var minLng = searchLng - Math.abs(searchRad / (111.320 * Math.cos(searchLat/180*Math.PI)));
+		var maxLng = searchLng + Math.abs(searchRad / (111.320 * Math.cos(searchLat/180*Math.PI)));
+	}
 	db = new sqlite3.Database('runners.db');
-	db.all("SELECT * FROM routes LIMIT 10", function (err, rows) {
-		if (err) {
-			console.log(err);
-			db.close(function (err) {if (err) {console.log(err);}});
-		} else {
-			res.render('forum.ejs', {
-				'usermsg': usermsg,
-				'rows': rows
+	if (req.query['browseby'] === 'old') {
+		db.all("SELECT * FROM routes WHERE latitude > ? AND latitude < ? AND longitude > ? AND longitude < ? LIMIT 10",
+			[minLat, maxLat, minLng, maxLng],
+			function (err, rows) {	
+				if (err) {
+					console.log(err);
+					db.close(function (err) {if (err) {console.log(err);}});
+				} else {
+					db.close(function (err) {if (err) {console.log(err);}});
+					res.send(JSON.stringify(rows));
+				}
 			});
-			db.close(function (err) {if (err) {console.log(err);}});
-		}
-	});
+	} else if (req.query['browseby'] === 'new') {
+		db.all("SELECT * FROM routes ORDER BY id DESC LIMIT 10", function (err, rows) {
+			if (err) {
+				console.log(err);
+				db.close(function (err) {if (err) {console.log(err);}});
+			} else {
+				db.close(function (err) {if (err) {console.log(err);}});
+				res.send(JSON.stringify(rows));
+			}
+		});
+	} 
 });
 
 app.get('/new_route', function (req, res) {
