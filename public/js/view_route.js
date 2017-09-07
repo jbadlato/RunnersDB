@@ -128,9 +128,14 @@ var upvote = function (comment_id) {
 	xhttp.setRequestHeader("Content-Type", "application/json");
 	xhttp.send(JSON.stringify({'comment_id': comment_id}));
 	xhttp.onreadystatechange = function () {
-		if (this.readState === 4 && this.status === 200) {
-			console.log('response received.');
-			buildReviews();
+		if (this.readyState === 4 && this.status === 200) {
+			if (this.responseText === 'Sign In') {
+				window.location = window.location.origin + "/sign_in";
+			} else if (this.responseText === 'Duplicate') {
+				alert('You have already upvoted this review.');
+			} else if (this.responseText === 'Success') {
+				buildReviews();
+			}
 		}
 	}
 }

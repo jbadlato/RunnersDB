@@ -327,16 +327,36 @@ app.post('/reviews', function (req, res) {
 });
 
 app.post('/upvote', function (req, res) {
+	sess = req.session;
+	if (!sess.username) {
+		sess.message = "Please sign in before upvoting.";
+		return res.send('Sign In');
+	}
 	comment_id = req.body.comment_id;
 	db = new sqlite3.Database('runners.db');
-	db.run("UPDATE reviews SET upvotes = upvotes + 1 WHERE comment_id = " + comment_id, function (err) {
+	db.get("SELECT * FROM upvotes WHERE username = ? AND review_id = ?", [sess.username, comment_id], function (err, row) {
 		if (err) {
 			console.log(err);
-			db.close();
+		} else if (row !== undefined) {
+			res.send('Duplicate');
+		} else {
+			db.run("UPDATE reviews SET upvotes = upvotes + 1 WHERE comment_id = " + comment_id, function (err) {
+				if (err) {
+					console.log(err);
+					db.close();
+				}
+				db.run("INSERT INTO upvotes (username, review_id) VALUES (?, ?)", [sess.username, comment_id], function (err) {
+					if (err) {
+						console.log(err);
+						db.close();
+					} else {
+						res.send('Success');
+					}
+				});
+			});
 		}
-		db.close();
-		res.send('Updated Upvotes');
 	});
+
 });
 
 app.post('/submitReview', function (req, res) {
