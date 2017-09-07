@@ -263,38 +263,23 @@ app.get('/route/:routeId', function (req, res) {
 	}
 	routeId = req.params.routeId;
 	db = new sqlite3.Database('runners.db');
-	var rowStore;
-	db.serialize(function() {
-		db.get("SELECT * FROM routes WHERE id = ?", routeId, function (err, row) {
-			rowStore = row;
-		});
-		db.all("SELECT * FROM reviews WHERE route_id = ? ORDER BY upvotes", routeId, function (err, rows) { // Limit/paginate this
-			var avgDifficulty = 0;
-			var avgSafety = 0;
-			var avgScenery = 0;
-			for (var i = 0; i < rows.length; i++) {
-				avgDifficulty += rows[i].difficulty;
-				avgSafety += rows[i].safety;
-				avgScenery += rows[i].scenery;
-			}
-			avgDifficulty = avgDifficulty / rows.length;
-			avgSafety = avgSafety / rows.length;
-			avgScenery = avgScenery / rows.length;
-			res.render('view_route.ejs', {
-				msg: messageStore,
-				'username': rowStore.username,
-				'route_name': rowStore.route_name,
-				initPath: rowStore.path,
-				distance: rowStore.distance,
-				elevation: rowStore.elevation,
-				initLat: rowStore.latitude,
-				initLng: rowStore.longitude,
-				'avgDifficulty': avgDifficulty,
-				'avgSafety': avgSafety,
-				'avgScenery': avgScenery,
-				'rows': rows
-			});
-		});
+	db.get("SELECT routes.*, AVG(reviews.difficulty) AS average_difficulty, AVG(reviews.safety) AS average_safety, " + 
+		"AVG(reviews.scenery) AS average_scenery FROM routes " + 
+		"INNER JOIN reviews ON routes.id = reviews.route_id WHERE id = " + routeId, 
+		function (err, row) {
+		res.render('view_route.ejs', {
+			msg: messageStore,
+			'username': row.username,
+			'route_name': row.route_name,
+			initPath: row.path,
+			distance: row.distance,
+			elevation: row.elevation,
+			initLat: row.latitude,
+			initLng: row.longitude,
+			avgDifficulty: Math.round(row.average_difficulty*100)/100,
+			avgSafety: Math.round(row.average_safety*100)/100,
+			avgScenery: Math.round(row.average_scenery*100)/100
+		});	
 		db.close(function (err) {
 			if (err) {
 				console.log(err);
@@ -325,6 +310,31 @@ app.post('/route/:routeId', function (req, res) {
 			});
 		});
 	}
+});
+
+app.post('/reviews', function (req, res) {
+	var offset = (req.body.page - 1) * 5;
+	db = new sqlite3.Database('runners.db');
+	db.all("SELECT * FROM reviews WHERE route_id = " + req.body.routeId + " ORDER BY upvotes DESC LIMIT 5 OFFSET " + offset, 
+		function (err, rows) {
+			if (err) {
+				console.log(err);
+			}
+			res.send(JSON.stringify(rows));
+	});
+});
+
+app.post('/upvote', function (req, res) {
+	comment_id = req.body.comment_id;
+	db = new sqlite3.Database('runners.db');
+	db.run("UPDATE reviews SET upvotes = upvotes + 1 WHERE comment_id = " + comment_id, function (err) {
+		if (err) {
+			console.log(err);
+			db.close();
+		}
+		db.close();
+		res.send('Updated Upvotes');
+	});
 });
 
 app.post('/submitReview', function (req, res) {
