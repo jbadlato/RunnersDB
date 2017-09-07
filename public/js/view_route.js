@@ -51,6 +51,8 @@ var submitReview = function () {
 		if (this.readyState === 4 && this.status === 200) {
 			if (this.responseText === 'Sign In') {
 				window.location = window.location.origin + "/sign_in";
+			} else if (this.responseText === 'Duplicate') {
+				document.getElementById('error_message').innerHTML = 'You have already submitted a review for this route.';
 			} else if (this.responseText === 'Success') {
 				document.getElementById('error_message').innerHTML = 'Review submitted.';
 			}

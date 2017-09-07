@@ -56,6 +56,8 @@ db.serialize(function() {
 	db.run("CREATE TABLE IF NOT EXISTS saved_routes (save_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER)");
 	db.run("CREATE TABLE IF NOT EXISTS reviews (comment_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER, comment TEXT, difficulty INTEGER, safety INTEGER, scenery INTEGER, upvotes INTEGER)");
 	db.run("CREATE INDEX IF NOT EXISTS idx_location ON routes (latitude, longitude)");
+	db.run("CREATE TABLE IF NOT EXISTS upvotes (upvote_id INTEGER PRIMARY KEY, username TEXT, review_id INTEGER)");
+	db.run("CREATE INDEX IF NOT EXISTS idx_upvotes ON upvotes (username, review_id)");
 })
 db.close();
 
@@ -343,22 +345,30 @@ app.post('/submitReview', function (req, res) {
 		sess.message = "Please sign in before submitting a review.";
 		return res.send('Sign In');
 	}
-	var username = sess.username;
 	var route_id = parseInt(req.body.route_id);
 	var comment = req.body.comment;
 	var difficulty = parseInt(req.body.difficulty);
 	var safety = parseInt(req.body.safety);
 	var scenery = parseInt(req.body.scenery);
 	db = new sqlite3.Database('runners.db');
-	db.run("INSERT INTO reviews (username, route_id, comment, difficulty, safety, scenery, upvotes) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-		[username, route_id, comment, difficulty, safety, scenery, 0],
-		function (err) {
-			if (err) {
-				console.log(err);
-				res.send('Failure');
-			}
-			res.send('Success');
-		});
+	db.get("SELECT * FROM reviews WHERE username=? AND route_id=?", [sess.username, route_id], function (err, row) {
+		if (err) {
+			console.log(err);
+		} else if (row !== undefined) {
+			res.send('Duplicate');
+		} else {
+			db.run("INSERT INTO reviews (username, route_id, comment, difficulty, safety, scenery, upvotes) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+				[sess.username, route_id, comment, difficulty, safety, scenery, 0],
+				function (err) {
+					if (err) {
+						console.log(err);
+						res.send('Failure');
+					}
+					res.send('Success');
+				});
+		}
+	});
+
 });
 
 app.get('/user/:user', function (req, res) {
