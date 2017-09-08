@@ -63,11 +63,11 @@ db.close();
 
 app.get('/', function(req, res) {
 	sess = req.session;
-	res.render('home.html');
+	res.render('home.ejs');
 });
 
 app.get('/free_draw', function(req, res) {
-	res.render('index.html');
+	res.render('draw_route.ejs');
 });
 
 app.get('/sign_up', function(req, res) {
