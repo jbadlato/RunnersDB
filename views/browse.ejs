@@ -3,45 +3,45 @@
 <head>
   <title>RunnersDB</title>
   <meta charset="utf-8">
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="../public/css/browse.css">
 </head>
 <body>
-  <h1>Browse Routes</h1>
-  <p><%= usermsg%></p>
-  <a href="../new_route">New Route</a>
-  <h2>Browse routes:</h2>
+  <h1>Browse</h1>
+  <p id="usermsg"><%if (usermsg === 'Sign In') {%>
+    <a id="sign_in_link" href='../sign_in'>Sign In</a>
+    <% } else {%>
+    <%= usermsg %>
+    <% } %>
+  </p>
+  <br/>
+  <a id="new_route" href="../new_route">New Route</a>
   <input type="search" id="address" placeholder="Enter a location/address to search for routes" style="width:500px">
-  <p id="currSearchLoc">Current Search Location: None</p>
-  <p id="search_radius">Search Radius: </p>
-  <div id=searchRadiusSelector>
-    <p>
-      <input type="radio" name="searchRadius" value="5">5 km
-      <input type="radio" name="searchRadius" value="10" checked="checked">10 km
-      <input type="radio" name="searchRadius" value="25">25 km
-      <input type="radio" name="searchRadius" value="50">50 km
-    </p>
-  </div>
-  <br/>
-  <p>Distance: 
-  	At least: <input type="number" id="min_dist" value="0"> km |
-  	At most: <input type="number" id="max_dist" value="9999999999"> km
+  <p id="currSearchLoc">Current Search Location: &nbsp;&nbsp;&nbsp;&nbsp; None</p>
+  <p id="searchRadiusSelector">
+    Search Radius:
+    <input type="radio" name="searchRadius" value="5">5 km
+    <input type="radio" name="searchRadius" value="10" checked="checked">10 km
+    <input type="radio" name="searchRadius" value="25">25 km
+    <input type="radio" name="searchRadius" value="50">50 km
   </p>
-  <br/>
-  <p>Elevation: 
-  At least: <input type="number" id="min_elev" value="0"> m
-  At most: <input type="number" id="max_elev" value="9999999999"> m
+  <p id="distance_control">Distance: 
+  	<input type="number" id="min_dist" value="0"> to
+  	<input type="number" id="max_dist" value="9999999999"> km
   </p>
-  <br/>
-  <p>Sort By: </p>  
-  <div id=browseBySelector>
-    <p>
-      <input type="radio" name="browseBy" value="old">Oldest
-      <input type="radio" name="browseBy" value="new" checked="checked">Newest
-      <input type="radio" name="browseBy" value="distance">Distance
-      <input type="radio" name="browseBy" value="elevation">Elevation
-      <input type="radio" name="browseBy" value="rating">Rating
-    </p>
-  </div>
-  <button onclick="newSearch()">Search</button>
+  <p id="elevation_control">Elevation: 
+  <input type="number" id="min_elev" value="0"> to
+  <input type="number" id="max_elev" value="9999999999"> m
+  </p>
+  <p id=browseBySelector>
+    Sort By: 
+    <input type="radio" name="browseBy" value="old">Oldest
+    <input type="radio" name="browseBy" value="new" checked="checked">Newest
+    <input type="radio" name="browseBy" value="distance">Distance
+    <input type="radio" name="browseBy" value="elevation">Elevation
+    <input type="radio" name="browseBy" value="rating">Rating
+  </p>
+  <button id="search_button" onclick="newSearch()">Search</button>
   <ul id="browse_container">
 
   </ul>

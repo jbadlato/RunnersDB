@@ -1,0 +1,65 @@
+* {
+	font-family: 'Roboto', sans-serif;
+}
+
+body {
+	background-color: #DDD;
+}
+
+ul {
+	list-style-type: none;
+	padding-left: 0;
+}
+
+a.route_link {
+	text-decoration: none;
+	font-weight: bold;
+	font-size: 24px;
+}
+
+li.route_details {
+	border-style: solid;
+	border-width: 2px;
+	border-radius: 10px;
+	display: inline-block;
+	box-sizing: border-box;	
+	width: 48%;
+	margin: 1%;
+	padding: 1%;
+}
+
+#sign_in_link, #new_route, #search_button {
+	display: inline-block;
+	padding: 7px;
+	color: #DDD;
+	background-color: #555;
+	text-decoration: none;
+	border-radius: 10px;
+}
+
+#sign_in_link:hover, #new_route:hover, #search_button:hover {
+	background-color: #777
+}
+
+h1 {
+	display: inline-block;
+	margin: 5px;
+}
+
+#usermsg, #new_route {
+	display: inline-block;
+	float: right;
+	margin: 5px;
+}
+
+#currSearchLoc, #searchRadiusSelector, #address, #browseBySelector {
+	margin: 5px;
+}
+
+#distance_control, #elevation_control {
+	margin: 5px;
+}
+
+#min_dist, #max_dist, #min_elev, #max_elev {
+	width: 50px;
+}

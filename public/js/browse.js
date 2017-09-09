@@ -24,6 +24,18 @@ function codeAddress() {
   });
 }
 
+var ratingToStars = function (rating) {
+	var stars = '';
+	for (var i = 0; i < 5; i++) {
+		if (i < rating) {
+			stars += '&#x2605';
+		} else {
+			stars += '&#x2606';
+		}
+	}
+	return stars;
+}
+
 var createPreview = function (row, browseContainer, resolve) {
 	// get location as a city/town/locality:
 	var latLng = new google.maps.LatLng(row.latitude, row.longitude);
@@ -41,17 +53,25 @@ var createPreview = function (row, browseContainer, resolve) {
 				}
 			}
 		}
-		preview = "<li>" +
-					"<a href='../route/" + row.id + "'>" + row.route_name + "</a>" +
+		//show stars:
+		var overall_rating = Math.round(row.overall_rating);
+		var overall_stars = ratingToStars(overall_rating);
+		var difficulty_rating = Math.round(row.average_difficulty);
+		var difficulty_stars = ratingToStars(difficulty_rating);
+		var safety_rating = Math.round(row.average_safety);
+		var safety_stars = ratingToStars(safety_rating);
+		var scenery_rating = Math.round(row.average_scenery);
+		var scenery_stars = ratingToStars(scenery_rating);
+		preview = "<li class='route_details'>" +
+					"<a class='route_link' href='../route/" + row.id + "'>" + row.route_name + "</a>" +
+					" by " + row.username + " " +  overall_stars +
 					"<ul>" +
-					"<li>Created By: " + row.username + "</li>" +
-					"<li>Location: " + location + "</li>" +
+					"<li>" + location + "</li>" +
 					"<li>Distance: " + row.distance + " km" + "</li>" +
 					"<li>Elevation: " + row.elevation + " m" + "</li>" +
-					"<li>Overall Rating: " + Math.round(row.overall_rating*100)/100 + "</li>" +
-					"<li>Difficulty: " + Math.round(row.average_difficulty*100)/100 + "</li>" + 
-					"<li>Safety: " + Math.round(row.average_safety*100)/100 + "</li>" +
-					"<li>Scenery: " + Math.round(row.average_scenery*100)/100 + "</li>" +
+					"<li>Difficulty: " + difficulty_stars + "</li>" + 
+					"<li>Safety: " + safety_stars + "</li>" +
+					"<li>Scenery: " + scenery_stars + "</li>" +
 					"</ul>" + 
 					"</li>";
 		browseContainer.innerHTML += preview;

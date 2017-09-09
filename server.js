@@ -138,7 +138,7 @@ app.get('/browse', function(req, res) {
 		sess.message = null;
 	}
 	if (!sess.username) {
-		usermsg = 'Please sign in first.';
+		usermsg = 'Sign In';
 	} else if (sess.username) {
 		usermsg = 'Signed in as: ' + sess.username;
 	}
