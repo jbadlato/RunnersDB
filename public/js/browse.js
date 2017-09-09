@@ -62,16 +62,21 @@ var createPreview = function (row, browseContainer, resolve) {
 		var safety_stars = ratingToStars(safety_rating);
 		var scenery_rating = Math.round(row.average_scenery);
 		var scenery_stars = ratingToStars(scenery_rating);
+		var staticMapURL = "https://maps.googleapis.com/maps/api/staticmap?center=" + row.latitude + "," + row.longitude +
+			"&zoom=14&size=300x300&maptype=roadmap" +
+			"&markers=" + row.latitude + "," + row.longitude +
+			"&key=AIzaSyDXvHQwe44-dcP4-8-b90Ly2ut4LWbb4ug"
 		preview = "<li class='route_details'>" +
 					"<a class='route_link' href='../route/" + row.id + "'>" + row.route_name + "</a>" +
 					" by " + row.username + " " +  overall_stars +
 					"<ul>" +
-					"<li>" + location + "</li>" +
-					"<li>Distance: " + row.distance + " km" + "</li>" +
-					"<li>Elevation: " + row.elevation + " m" + "</li>" +
-					"<li>Difficulty: " + difficulty_stars + "</li>" + 
-					"<li>Safety: " + safety_stars + "</li>" +
-					"<li>Scenery: " + scenery_stars + "</li>" +
+					"<img src=" + staticMapURL + " class='map_preview'/>" +
+					"<li class='route_param'>" + location + "</li>" +
+					"<li class='route_param'>Distance: " + row.distance + " km" + "</li>" +
+					"<li class='route_param'>Elevation: " + row.elevation + " m" + "</li>" +
+					"<li class='route_param'>Difficulty: " + difficulty_stars + "</li>" + 
+					"<li class='route_param'>Safety: " + safety_stars + "</li>" +
+					"<li class='route_param'>Scenery: " + scenery_stars + "</li>" +
 					"</ul>" + 
 					"</li>";
 		browseContainer.innerHTML += preview;
