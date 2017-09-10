@@ -75,6 +75,7 @@ app.get('/sign_up', function(req, res) {
 });
 
 app.post('/sign_up', function(req, res) {
+	sess = req.session;	
 	db = new sqlite3.Database('runners.db');
 	if (req.body.password !== req.body.password2) {
 		// passwords don't match
@@ -94,7 +95,9 @@ app.post('/sign_up', function(req, res) {
 			} else {
 				db.run("INSERT INTO logins (username, password) VALUES (?, ?)", [req.body.username, req.body.password]);
 				db.close();
-				res.render('sign_up.ejs', {msg: 'You have created a new account.'});
+				//res.render('sign_up.ejs', {msg: 'You have created a new account.'});
+				sess.username = req.body.username;
+				res.redirect('/browse');
 			}
 		});
 	}

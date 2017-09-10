@@ -1,0 +1,34 @@
+* {
+	font-family: 'Roboto', sans-serif;
+}
+
+body {
+	background-color: #DDD;
+	padding: 0 50px;
+}
+
+form, #input_labels {
+	display: inline-block;
+	margin: 10px;
+	float: left;
+	padding: 0;
+}
+
+input {
+	margin: 5px;
+}
+
+p {
+	margin: 11px;
+}
+
+#server_message {
+	display: inline-block;
+	float: top;
+	border-style: solid;
+	border-radius: 10px;
+	border-color: #C55;
+	border-width: 2px;
+	background-color: #E77;
+	color: #500;
+}

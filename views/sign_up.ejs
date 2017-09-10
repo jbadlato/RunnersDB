@@ -3,17 +3,26 @@
   <head>
     <title>RunnersDB</title>
     <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="../public/css/sign_up.css">
   </head>
   <body>
     <h2>Create an Account</h2>
+    <p id="server_message"><%= msg%></p>
+    <br/>
+    <div id="input_labels">
+      <p>Username: </p>
+      <p>Password: </p>
+      <p>Confirm Password: </p>
+    </div>
     <form action="../sign_up" method="post">
-      <p>Desired Username:<input type="text" name="username"></p>
-      <p>Password:<input type="text" name="password"></p>
-      <p>Confirm Password:<input type="text" name="password2"></p>
+      <input type="text" name="username">
+      <br/>
+      <input type="text" name="password">
+      <br/>
+      <input type="text" name="password2">
+      <br/>
       <input type="submit" value="Sign Up">
     </form>
-    <div id="server_message">
-      <p><%= msg%></p>
-    </div>
   </body>
 </html>
