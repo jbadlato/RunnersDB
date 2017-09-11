@@ -139,3 +139,4 @@ var upvote = function (comment_id) {
 		}
 	}
 }
+

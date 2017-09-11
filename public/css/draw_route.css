@@ -9,6 +9,11 @@
 	margin-left: auto;
 }
 
+#free_drawer {
+	height: 100%;
+	width: 100%;
+}
+
 #map {
 	height: 100%;
 	width: 100%;
@@ -20,7 +25,7 @@ html, body {
 	padding: 0;
 }
 
-button {
+#route_drawer button, #free_drawer button {
 	color: #fff;
 	background-color: #4d90fe;
 	border-radius: 10px;

@@ -4,18 +4,20 @@
     <title>RunnersDB</title>
     <meta name="viewport" content="initial-scale=1.0">
     <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="../public/css/draw_route.css">
+    <link rel="stylesheet" type="text/css" href="../public/css/view_route.css">
     <script src="https://www.google.com/jsapi"></script>
   </head>
   <body>
-    <p><%= msg%></p>
-    <p>Route Name: <%= route_name%></p>
-    <p>Submitted by User: <%= username%></p>
-    <p>Distance: <%= distance%> km</p>
-    <p>Max Elevation Change: <%= elevation%> m</p>
+    <p id="server_message"><%= msg%></p>
+    <h1><%= route_name%></h1>
+    <p id="author">by <%= username%></p>
     <form action="" method="post">
-      <input type="submit" name="save_route" value="Save Route">
+      <input id="save_route" type="submit" name="save_route" value="Save Route">
     </form>
+    <p>Distance: <%= distance%> km</p>
+    <p>Elevation: <%= elevation%> m</p>
     <p id="init_lat"><%= initLat%></p>
     <p id="init_lng"><%= initLng%></p>
     <p id="init_path"><%= initPath%></p>
@@ -24,12 +26,23 @@
     <input id="avgLng" type="text" name="avgLng" value="">
     <input id="dist" type="text" name="dist" value="">
     <input id="elevChange" name="elevChange" type="text" value="">
-    <p>Average Ratings:</p>
-      <ul>
-        <li>Difficulty: <%= avgDifficulty%></li>
-        <li>Safety: <%= avgSafety%></li>
-        <li>Scenery: <%= avgScenery%></li>
+      <ul id="ratings_container">
+        <% var ratingToStars = function (rating) {
+  var stars = '';
+  for (var i = 0; i < 5; i++) {
+    if (i < rating) {
+      stars += '★';
+    } else {
+      stars += '☆';
+    }
+  }
+  return stars;
+} %>
+        <li>Difficulty: <%= ratingToStars(avgDifficulty)%></li>
+        <li>Safety: <%= ratingToStars(avgSafety)%></li>
+        <li>Scenery: <%= ratingToStars(avgScenery)%></li>
       </ul>
+    <hr/>
     <div id="route_drawer">
       <div id="search_bar">
         <input id="text_input" type="text" placeholder="Jump to a location">
@@ -50,6 +63,7 @@
     <button onclick="showReviews()">Show Reviews</button>
     <button onclick="toggleNewReview()">Add a Review</button>
     <div id="new_review_container" style="display: none;">
+      <hr/>
       <p>Difficulty: <br/>
       1 <input type="radio" name="difficulty" value="1" required>
       <input type="radio" name="difficulty" value="2">
@@ -74,6 +88,7 @@
       <p>Comment/Description: <input id="comment" type="text" name="comment" value=""></p>
       <button onclick="submitReview()">Submit Review</button>
       <p id="error_message"></p>
+      <hr/>
     </div>
     <ul id="reviews_container">
 
