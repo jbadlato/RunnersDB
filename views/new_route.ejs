@@ -4,7 +4,9 @@
     <title>RunnersDB</title>
     <meta name="viewport" content="initial-scale=1.0">
     <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="../public/css/draw_route.css">
+    <link rel="stylesheet" type="text/css" href="../public/css/new_route.css">
     <script src="https://www.google.com/jsapi"></script>
   </head>
   <body>
@@ -43,9 +45,7 @@
       <input id="elevChange" name="elevChange" type="text" value="">
       <input type="submit" value="Create Route">
     </form>
-    <div id="server_message">
-      <p><%= msg%></p>
-    </div>
+    <p id="server_message"><%= msg%></p>
     <div id="route_drawer">
       <div id="search_bar">
         <input id="text_input" type="text" placeholder="Jump to a location">
