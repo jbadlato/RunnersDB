@@ -21,6 +21,18 @@ var getRadioValue = function(elementId) {
 	return value;
 }
 
+var ratingToStars = function (rating) {
+	var stars = '';
+	for (var i = 0; i < 5; i++) {
+		if (i < rating) {
+			stars += '&#x2605';
+		} else {
+			stars += '&#x2606';
+		}
+	}
+	return stars;
+}
+
 var submitReview = function () {
 	var url = document.createElement("a");
 	url.href = window.location.href;
@@ -61,15 +73,14 @@ var submitReview = function () {
 }
 
 var createReview = function (row) {
-	review = "<li>Review by: " + row.username + "<button onclick=upvote(" + row.comment_id + ")>Upvote</button>" +
-	    "</li>" +
-		"<ul>" + 
-		"<li>Comment: " + row.comment + "</li>" + 
-		"<li>Difficulty: " + row.difficulty + "</li>" + 
-		"<li>Safety: " + row.safety + "</li>" +
-		"<li>Scenery: " + row.scenery + "</li>" + 
-		"<li>Upvotes: " + row.upvotes + "</li>" + 
-		"</ul>";
+	review = "<li id='review'>" + row.username +" [" + row.upvotes + "]<button id='upvote' onclick=upvote(" + row.comment_id + ")>&#x21E7</button>" +
+		"<ul id='review_content'>" + 
+		"<li><h3>" + row.comment + "</h3></li>" + 
+		"<li>Difficulty: " + ratingToStars(row.difficulty) + "</li>" + 
+		"<li>Safety: " + ratingToStars(row.safety) + "</li>" +
+		"<li>Scenery: " + ratingToStars(row.scenery) + "</li>" + 
+		"</ul>" +
+	    "</li>";
 	return review;
 }
 
