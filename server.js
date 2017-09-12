@@ -275,24 +275,28 @@ app.get('/route/:routeId', function (req, res) {
 		"AVG(reviews.scenery) AS average_scenery FROM routes " + 
 		"INNER JOIN reviews ON routes.id = reviews.route_id WHERE id = " + routeId, 
 		function (err, row) {
-		res.render('view_route.ejs', {
-			msg: messageStore,
-			'username': row.username,
-			'route_name': row.route_name,
-			initPath: row.path,
-			distance: row.distance,
-			elevation: row.elevation,
-			initLat: row.latitude,
-			initLng: row.longitude,
-			avgDifficulty: Math.round(row.average_difficulty*100)/100,
-			avgSafety: Math.round(row.average_safety*100)/100,
-			avgScenery: Math.round(row.average_scenery*100)/100
-		});	
-		db.close(function (err) {
-			if (err) {
-				console.log(err);
+			if (row.id === null) {
+				res.send("<p>Route not found.</p>");
+			} else {
+				res.render('view_route.ejs', {
+					msg: messageStore,
+					'username': row.username,
+					'route_name': row.route_name,
+					initPath: row.path,
+					distance: row.distance,
+					elevation: row.elevation,
+					initLat: row.latitude,
+					initLng: row.longitude,
+					avgDifficulty: Math.round(row.average_difficulty*100)/100,
+					avgSafety: Math.round(row.average_safety*100)/100,
+					avgScenery: Math.round(row.average_scenery*100)/100
+				});	
+				db.close(function (err) {
+					if (err) {
+						console.log(err);
+					}
+				});
 			}
-		});
 	});
 });
 
