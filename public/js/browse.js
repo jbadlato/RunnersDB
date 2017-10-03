@@ -129,6 +129,7 @@ function setBrowse() {
 	xhttp.onreadystatechange = function () {
 		if (this.readyState === 4 && this.status === 200) {
 			rows = JSON.parse(this.responseText);
+			console.log(rows);
 			if (rows.length < 10) {
 				document.getElementById('next_button').style = "display: none;";
 			} else {

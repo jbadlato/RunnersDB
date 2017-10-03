@@ -1,35 +1,17 @@
-/*
-var express = require('express');
-var app = express();
-
-app.set('port', (process.env.PORT || 5000));
-
-app.use(express.static(__dirname));
-
-// views is directory for all template files
-app.set('views', __dirname);
-app.set('view engine', 'ejs');
-
-app.get('/', function(request, response) {
-  response.render('index');
-});
-
-app.listen(app.get('port'), function() {
-  console.log('Node app is running on port', app.get('port'));
-});
-*/
-
 var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
 var bodyParser = require('body-parser');
 var session = require('express-session');
+const { Client } = require('pg');
+var conString = process.env.DATABASE_URL;
 var messageStore; // used for temporary storage
 
 // Start server:
 app.set('port', process.env.PORT || 5000);
 server.listen(app.get('port'), function () {
 	console.log('Server is running on port ' + app.get('port'));
+	createTables();
 });
 
 app.use(express.static(__dirname));
@@ -47,19 +29,28 @@ app.use(session({secret: 'ssshhhhh',
 }));
 var sess;
 
-// Set up sqlite3 database:
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('runners.db');
-db.serialize(function() {
-	db.run("CREATE TABLE IF NOT EXISTS logins (id INTEGER PRIMARY KEY, username TEXT, password TEXT)");
-	db.run("CREATE TABLE IF NOT EXISTS routes (id INTEGER PRIMARY KEY, username TEXT, route_name TEXT, path TEXT, latitude REAL, longitude REAL, distance REAL, elevation REAL)");
-	db.run("CREATE TABLE IF NOT EXISTS saved_routes (save_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER)");
-	db.run("CREATE TABLE IF NOT EXISTS reviews (comment_id INTEGER PRIMARY KEY, username TEXT, route_id INTEGER, comment TEXT, difficulty INTEGER, safety INTEGER, scenery INTEGER, upvotes INTEGER)");
-	db.run("CREATE INDEX IF NOT EXISTS idx_location ON routes (latitude, longitude)");
-	db.run("CREATE TABLE IF NOT EXISTS upvotes (upvote_id INTEGER PRIMARY KEY, username TEXT, review_id INTEGER)");
-	db.run("CREATE INDEX IF NOT EXISTS idx_upvotes ON upvotes (username, review_id)");
-})
-db.close();
+function createTables() {
+	const client = new Client({
+		connectionString: conString,
+		ssl: true
+	});
+	client.connect()
+		/* To reset the database:
+		.then(() => client.query("DROP TABLE IF EXISTS logins;"))
+		.then(result => client.query("DROP TABLE IF EXISTS routes;"))
+		.then(result => client.query("DROP TABLE IF EXISTS saved_routes;"))
+		.then(result => client.query("DROP TABLE IF EXISTS reviews;"))
+		.then(result => client.query("DROP TABLE IF EXISTS upvotes;"))
+		//*/
+		.then(() => client.query("CREATE TABLE IF NOT EXISTS logins (id SERIAL PRIMARY KEY, username TEXT, password TEXT);"))
+		.then(result => client.query("CREATE TABLE IF NOT EXISTS routes (id SERIAL PRIMARY KEY, username TEXT, route_name TEXT, path TEXT, latitude REAL, longitude REAL, distance REAL, elevation REAL);"))
+		.then(result => client.query("CREATE TABLE IF NOT EXISTS saved_routes (save_id SERIAL PRIMARY KEY, username TEXT, route_id INTEGER);"))
+		.then(result => client.query("CREATE TABLE IF NOT EXISTS reviews (comment_id SERIAL PRIMARY KEY, username TEXT, route_id INTEGER, comment TEXT, difficulty INTEGER, safety INTEGER, scenery INTEGER, upvotes INTEGER);"))
+		.then(result => client.query("CREATE INDEX IF NOT EXISTS idx_location ON routes (latitude, longitude);"))
+		.then(result => client.query("CREATE TABLE IF NOT EXISTS upvotes (upvote_id SERIAL PRIMARY KEY, username TEXT, review_id INTEGER);"))
+		.then(result => client.query("CREATE INDEX IF NOT EXISTS idx_upvotes ON upvotes (username, review_id);"))
+		.then(() => client.end());
+}
 
 app.get('/', function(req, res) {
 	sess = req.session;
@@ -76,7 +67,6 @@ app.get('/sign_up', function(req, res) {
 
 app.post('/sign_up', function(req, res) {
 	sess = req.session;	
-	db = new sqlite3.Database('runners.db');
 	if (sess.username) {
 		res.redirect('/sign_in');
 	}
@@ -90,19 +80,29 @@ app.post('/sign_up', function(req, res) {
 		// password is too short
 		res.render('sign_up.ejs', {msg: 'Password must be at least 5 characters.'});
 	} else {
-		db.all("SELECT * FROM logins WHERE username = ?", [req.body.username], function (err, rows) {
-			if (rows.length > 0) {
-				// username already taken
-				db.close();
-				res.render('sign_up.ejs', {msg: 'Username already taken!'});
-			} else {
-				db.run("INSERT INTO logins (username, password) VALUES (?, ?)", [req.body.username, req.body.password]);
-				db.close();
-				//res.render('sign_up.ejs', {msg: 'You have created a new account.'});
-				sess.username = req.body.username;
-				res.redirect('/browse');
-			}
+		const client = new Client({
+			connectionString: conString,
+			ssl: true
 		});
+		client.connect()
+			.then(() => client.query("SELECT * FROM logins WHERE username = $1", [req.body.username]))
+			.then(function(result) {
+				if (result.rows.length > 0) {
+					client.end()
+						.then(() => res.render('sign_up.ejs', {msg: 'Username already taken!'}));
+				} else {
+					client.query("INSERT INTO logins (username, password) VALUES ($1, $2)", [req.body.username, req.body.password])
+						.then(function(result) {
+							var promise = new Promise(function(resolve, reject) {
+								sess.username = req.body.username;
+								resolve();
+							});
+							return promise;
+						})
+						.then(() => client.end())
+						.then(() => res.redirect('/browse'));
+				}
+			});
 	}
 });
 
@@ -122,19 +122,24 @@ app.get('/sign_in', function(req, res) {
 app.post('/sign_in', function(req, res) {
 	sess = req.session;
 	// check if login is valid
-	db = new sqlite3.Database('runners.db');
-	db.all("SELECT * FROM logins WHERE username = ? AND password = ?", [req.body.username, req.body.password], function (err, rows) {
-		if (rows.length === 0) {
-			// sign in failed.
-			db.close();
-			res.render('sign_in.ejs', {msg: 'Wrong username and/or password.'});
-		} else {
-			// sign the user in.
-			sess.username = req.body.username;
-			db.close();
-			res.redirect('/browse');
-		}
+	const client = new Client({
+		connectionString: conString,
+		ssl: true
 	});
+	client.connect()
+		.then(() => client.query("SELECT * FROM logins WHERE username = $1 AND password = $2", [req.body.username, req.body.password]))
+		.then(function(result) {
+			if (result.rows.length === 0) {
+				// sign in failed.
+				client.end()
+					.then(() => res.render('sign_in.ejs', {msg: 'Wrong username and/or password.'}));
+			} else {
+				// sign the user in.
+				sess.username = req.body.username;
+				client.end()
+					.then(() => res.redirect('/browse'));
+			}
+		});
 });
 
 app.get('/browse', function(req, res) {
@@ -183,13 +188,13 @@ app.post('/browse', function(req, res) {
 	if (req.body.browseby === 'rating') {
 		sortBy = 'overall_rating DESC';
 	} else if (req.body.browseby === 'old') {
-		sortBy = 'id ASC';
+		sortBy = 'routes.id ASC';
 	} else if (req.body.browseby === 'new') {
-		sortBy = 'id DESC';
+		sortBy = 'routes.id DESC';
 	} else if (req.body.browseby === 'distance') {
-		sortBy = 'distance ASC';
+		sortBy = 'routes.distance ASC';
 	} else if (req.body.browseby === 'elevation') {
-		sortBy = 'elevation ASC';
+		sortBy = 'routes.elevation ASC';
 	} else {
 		console.log('invalid browseby parameter.');
 		return;
@@ -200,19 +205,21 @@ app.post('/browse', function(req, res) {
 		"AVG (reviews.scenery) AS average_scenery " +
 		"FROM routes " +
 		"INNER JOIN reviews ON routes.id = reviews.route_id " +
-		"WHERE routes.latitude BETWEEN ? AND ? AND routes.longitude BETWEEN ? AND ? " +
-		"AND routes.distance BETWEEN ? AND ? AND routes.elevation BETWEEN ? AND ? " +
-		"GROUP BY id " +
+		"WHERE routes.latitude BETWEEN $1 AND $2 AND routes.longitude BETWEEN $3 AND $4 " +
+		"AND routes.distance BETWEEN $5 AND $6 AND routes.elevation BETWEEN $7 AND $8 " +
+		"GROUP BY routes.id " +
 		"ORDER BY " + sortBy + " LIMIT 10 OFFSET " + offset;
-	db = new sqlite3.Database('runners.db');
-	db.all(query, [minLat, maxLat, minLng, maxLng, minDist, maxDist, minElev, maxElev], function (err, rows) {	
-		if (err) {
-			console.log(err);
-			db.close(function (err) {if (err) {console.log(err);}});
-		} else {
-			res.send(JSON.stringify(rows));
-		}
+
+	const client = new Client({
+		connectionString: conString,
+		ssl: true
 	});
+	client.connect()
+		.then(() => client.query(query, [minLat, maxLat, minLng, maxLng, minDist, maxDist, minElev, maxElev]))
+		.then(function(result) {
+			client.end()
+				.then(() => res.send(JSON.stringify(result.rows)));
+		});
 });
 
 app.get('/new_route', function (req, res) {
@@ -232,31 +239,31 @@ app.post('/new_route', function(req, res) {
 	} else if (req.body.path === '[]') { // Find a better way to do this without refreshing page & deleting users input.
 		res.render('new_route.ejs', {msg: 'Please draw a route.'});
 	} else {
-		db = new sqlite3.Database('runners.db');
+		const client = new Client({
+			connectionString: conString,
+			ssl: true
+		});
 		var routeId;
-		// Yes, this is callback hell, but I'm not sure there's a better way without additional libraries.
-		db.run("INSERT INTO routes (username, route_name, path, latitude, longitude, distance, elevation) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-			[sess.username, req.body.route_name, req.body.path, req.body.avgLat, req.body.avgLng, req.body.dist, req.body.elevChange], 
-			function (err) {
-				routeId = this.lastID;
-				if (!req.body.route_name) {
-					defaultName = 'Route' + routeId;
-					db.run("UPDATE routes SET route_name=? WHERE id=?", [defaultName, routeId]);
-				}
-			db.run("INSERT INTO reviews VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)",
-				[sess.username, routeId, req.body.comment, req.body.difficulty, req.body.safety, req.body.scenery, 0], 
-				function (err) {
-					if (err) {
-						console.log(err);
-					} 
-					db.close(function(err) {
-					if (err) {
-						console.log(err)
-					} else {
-						sess.message = 'New route created.';
-						res.redirect('/route/' + routeId);
+		client.connect()
+			.then(() => client.query("INSERT INTO routes (username, route_name, path, latitude, longitude, distance, elevation) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+				[sess.username, req.body.route_name, req.body.path, req.body.avgLat, req.body.avgLng, req.body.dist, req.body.elevChange]))
+			.then(function(result) {
+				var promise = new Promise(function(resolve, reject) {
+					routeId = result.rows[0].id;
+					if (!req.body.route_name) {
+						defaultName = 'Route' + routeId;
+						client.query("UPDATE routes SET route_name=$1 WHERE id=$2", [defaultName, routeId]);
 					}
-					});
+					resolve();
+				});
+				return promise;
+			})
+			.then(() => client.query("INSERT INTO reviews (username, route_id, comment, difficulty, safety, scenery, upvotes) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+				[sess.username, routeId, req.body.comment, req.body.difficulty, req.body.safety, req.body.scenery, 0]))
+			.then(function(result) {
+				client.end().then(function () {
+					sess.message = 'New route created.';
+					res.redirect('/route/' + routeId);
 				});
 			});
 	}
@@ -270,34 +277,36 @@ app.get('/route/:routeId', function (req, res) {
 		sess.message = null;
 	}
 	routeId = req.params.routeId;
-	db = new sqlite3.Database('runners.db');
-	db.get("SELECT routes.*, AVG(reviews.difficulty) AS average_difficulty, AVG(reviews.safety) AS average_safety, " + 
-		"AVG(reviews.scenery) AS average_scenery FROM routes " + 
-		"INNER JOIN reviews ON routes.id = reviews.route_id WHERE id = " + routeId, 
-		function (err, row) {
-			if (row.id === null) {
-				res.send("<p>Route not found.</p>");
-			} else {
-				res.render('view_route.ejs', {
-					msg: messageStore,
-					'username': row.username,
-					'route_name': row.route_name,
-					initPath: row.path,
-					distance: row.distance,
-					elevation: row.elevation,
-					initLat: row.latitude,
-					initLng: row.longitude,
-					avgDifficulty: Math.round(row.average_difficulty*100)/100,
-					avgSafety: Math.round(row.average_safety*100)/100,
-					avgScenery: Math.round(row.average_scenery*100)/100
-				});	
-				db.close(function (err) {
-					if (err) {
-						console.log(err);
-					}
-				});
-			}
+	const client = new Client({
+		connectionString: conString,
+		ssl: true
 	});
+	client.connect()
+		.then(() => client.query("SELECT routes.*, AVG(reviews.difficulty) AS average_difficulty, AVG(reviews.safety) AS average_safety, " +
+			"AVG(reviews.scenery) AS average_scenery FROM routes " +
+			"INNER JOIN reviews ON routes.id = reviews.route_id WHERE routes.id = " + routeId + " GROUP BY routes.id;"))
+		.then(function(result) {
+			if (result.rows.length === 0) {
+				client.end()
+					.then(() => res.send("<p>Route not found.</p>"));
+			} else {
+				client.end()
+				.then(() => res.render("view_route.ejs", {
+					msg: messageStore,
+					'username': result.rows[0].username,
+					'route_name': result.rows[0].route_name,
+					initPath: result.rows[0].path,
+					distance: result.rows[0].distance,
+					elevation: result.rows[0].elevation,
+					initLat: result.rows[0].latitude,
+					initLng: result.rows[0].longitude,
+					avgDifficulty: Math.round(result.rows[0].average_difficulty*100)/100,
+					avgSafety: Math.round(result.rows[0].average_safety*100)/100,
+					avgScenery: Math.round(result.rows[0].average_scenery*100)/100
+				}));
+
+			}
+		});
 });
 
 app.post('/route/:routeId', function (req, res) {
@@ -306,34 +315,44 @@ app.post('/route/:routeId', function (req, res) {
 		sess.message = "Please sign in first.";
 		res.redirect('/sign_in');
 	} else {
-		routeId = req.params.routeId;
-		db = new sqlite3.Database('runners.db');
-		db.serialize(function() {
-			db.get("SELECT * FROM saved_routes WHERE username=? AND route_id=?", [sess.username, routeId], function (err, row) {
-				if (row === undefined) {
-					db.run("INSERT INTO saved_routes (username, route_id) VALUES (?, ?)", [sess.username, routeId], function (err) {
-						if (err) {
-							console.log(err);
-						}
-						sess.message = 'Route saved.';
-						res.redirect('/route/' + routeId);
-					});
+		var routeId = req.params.routeId;
+		const client = new Client({
+			connectionString: conString,
+			ssl: true
+		});
+		client.connect()
+			.then(() => client.query("SELECT * FROM saved_routes WHERE username=$1 AND route_id=$2", [sess.username, routeId]))
+			.then(function(result) {
+				if (result.rows.length === 0) {
+					client.query("INSERT INTO saved_routes (username, route_id) VALUES ($1, $2)", [sess.username, routeId])
+						.then(result => client.end())
+						.then(function () {
+							sess.message = 'Route saved.';
+							res.redirect('/route/' + routeId);
+						});
+				} else {
+					client.end()
+						.then(function () {
+							sess.message = 'Route could not be saved.';
+							res.redirect('/route/' + routeId);
+						});
 				}
 			});
-		});
 	}
 });
 
 app.post('/reviews', function (req, res) {
 	var offset = (req.body.page - 1) * 5;
-	db = new sqlite3.Database('runners.db');
-	db.all("SELECT * FROM reviews WHERE route_id = " + req.body.routeId + " ORDER BY upvotes DESC LIMIT 5 OFFSET " + offset, 
-		function (err, rows) {
-			if (err) {
-				console.log(err);
-			}
-			res.send(JSON.stringify(rows));
+	const client = new Client({
+		connectionString: conString,
+		ssl: true
 	});
+	client.connect()
+		.then(() => client.query("SELECT * FROM reviews WHERE route_id = " + req.body.routeId + " ORDER BY upvotes DESC LIMIT 5 OFFSET " + offset))
+		.then(function(result) {
+			client.end()
+				.then(() => res.send(JSON.stringify(result.rows)));
+		});
 });
 
 app.post('/upvote', function (req, res) {
@@ -343,30 +362,22 @@ app.post('/upvote', function (req, res) {
 		return res.send('Sign In');
 	}
 	comment_id = req.body.comment_id;
-	db = new sqlite3.Database('runners.db');
-	db.get("SELECT * FROM upvotes WHERE username = ? AND review_id = ?", [sess.username, comment_id], function (err, row) {
-		if (err) {
-			console.log(err);
-		} else if (row !== undefined) {
-			res.send('Duplicate');
-		} else {
-			db.run("UPDATE reviews SET upvotes = upvotes + 1 WHERE comment_id = " + comment_id, function (err) {
-				if (err) {
-					console.log(err);
-					db.close();
-				}
-				db.run("INSERT INTO upvotes (username, review_id) VALUES (?, ?)", [sess.username, comment_id], function (err) {
-					if (err) {
-						console.log(err);
-						db.close();
-					} else {
-						res.send('Success');
-					}
-				});
-			});
-		}
+	const client = new Client({
+		connectionString: conString,
+		ssl: true
 	});
-
+	client.connect()
+		.then(() => client.query("SELECT * FROM upvotes WHERE username = $1 AND review_id = $2", [sess.username, comment_id]))
+		.then(function (result) {
+			if (result.rows.length > 0) {
+				res.send('Duplicate');
+			} else {
+				client.query("UPDATE reviews SET upvotes = upvotes + 1 WHERE comment_id = " + comment_id)
+					.then(result => client.query("INSERT INTO upvotes (username, review_id) VALUES ($1, $2)", [sess.username, comment_id]))
+					.then(result => client.end())
+					.then(() => res.send('Success'));
+			}
+		})
 });
 
 app.post('/submitReview', function (req, res) {
@@ -380,67 +391,72 @@ app.post('/submitReview', function (req, res) {
 	var difficulty = parseInt(req.body.difficulty);
 	var safety = parseInt(req.body.safety);
 	var scenery = parseInt(req.body.scenery);
-	db = new sqlite3.Database('runners.db');
-	db.get("SELECT * FROM reviews WHERE username=? AND route_id=?", [sess.username, route_id], function (err, row) {
-		if (err) {
-			console.log(err);
-		} else if (row !== undefined) {
-			res.send('Duplicate');
-		} else {
-			db.run("INSERT INTO reviews (username, route_id, comment, difficulty, safety, scenery, upvotes) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-				[sess.username, route_id, comment, difficulty, safety, scenery, 0],
-				function (err) {
-					if (err) {
-						console.log(err);
-						res.send('Failure');
-					}
-					res.send('Success');
-				});
-		}
+	const client = new Client({
+		connectionString: conString,
+		ssl: true
 	});
-
+	client.connect()
+		.then(() => client.query("SELECT * FROM reviews WHERE username=$1 AND route_id=$2", [sess.username, route_id]))
+		.then(function(result) {
+			if (result.rows.length > 0) {
+				client.end()
+					.then(() => res.send('Duplicate'));
+			} else {
+				client.query("INSERT INTO reviews (username, route_id, comment, difficulty, safety, scenery, upvotes) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+					[sess.username, route_id, comment, difficulty, safety, scenery, 0])
+					.then(result => client.end())
+					.then(() => res.send('Success'));
+			}
+		})
 });
 
 app.get('/user/:user', function (req, res) {
 	sess = req.session;
-	db = new sqlite3.Database('runners.db');
-	db.get("SELECT * FROM logins WHERE username = ?", req.params.user, function (err, row) {
-		if (row === undefined) {
-			res.send('<p>User does not exist</p>')
-		} else {
-			db.serialize(function() {
-				// get routes created by user:
+	const client = new Client({
+		connectionString: conString,
+		ssl: true
+	});
+	client.connect()
+		.then(() => client.query("SELECT * FROM logins WHERE username = $1", [req.params.user]))
+		.then(function(result) {
+			if (result.rows.length === 0) {
+				client.end()
+					.then(() => res.send('<p>User does not exist</p>'));
+			} else {
 				var routeNames = [];
 				var routeIds = [];
-				db.all("SELECT * FROM routes WHERE username = ?", req.params.user, function(err, rows) {
-					for (var i=0; i<rows.length; i++) {
-						routeNames.push(rows[i].route_name);
-						routeIds.push(rows[i].id);
-					}
-				});
 				var savedRouteIds = [];
 				var savedRouteNames = [];
-				db.all("SELECT * FROM saved_routes a JOIN routes b ON a.route_id = b.id AND a.username = ?",
-					req.params.user, function (err, rows) {
-						for (var i=0; i<rows.length; i++) {
-							savedRouteIds.push(rows[i].route_id);
-							savedRouteNames.push(rows[i].route_name);
-						}
-					});
-				db.close(function(err) {
-					if (err) {
-						console.log(err);
-					} else {
-						res.render('view_user.ejs', {
-							'username': row.username,
-							'routeNames': routeNames,
-							'routeIds': routeIds,
-							'savedRouteNames': savedRouteNames,
-							'savedRouteIds': savedRouteIds
+				client.query("SELECT * FROM routes WHERE username = $1", [req.params.user])
+					.then(function(result) {
+						var promise = new Promise(function(resolve, reject) {
+							for (var i=0; i<result.rows.length; i++) {
+								routeNames.push(result.rows[i].route_name);
+								routeIds.push(result.rows[i].id);
+							}
+							resolve();
 						});
-					}
-				});
-			});
-		}
-	});
+						return promise;
+					})
+					.then(() => client.query("SELECT * FROM saved_routes a JOIN routes b ON a.route_id = b.id AND a.username = $1", [req.params.user]))
+					.then(function(result) {
+						var promise = new Promise(function (resolve, reject) {
+							for (var i=0; i<result.rows.length; i++) {
+								savedRouteIds.push(result.rows[i].route_id);
+								savedRouteNames.push(result.rows[i].route_name);
+							}
+							resolve();
+						})
+						return promise;
+					})
+					.then(() => client.end())
+					.then(() => res.render('view_user.ejs', {
+						'username': req.params.user,
+						'routeNames': routeNames,
+						'routeIds': routeIds,
+						'savedRouteNames': savedRouteNames,
+						'savedRouteIds': savedRouteIds
+					}));
+			}
+		})
 });
