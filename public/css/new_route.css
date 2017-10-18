@@ -23,11 +23,6 @@ input[type="submit"]:hover {
 
 #server_message {
 	float: top;
-	border-style: solid;
-	border-radius: 10px;
-	border-color: #C55;
-	border-width: 2px;
-	background-color: #E77;
 	color: #500;
 	text-align: center;
 }

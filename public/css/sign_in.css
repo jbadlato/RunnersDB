@@ -10,10 +10,5 @@ body {
 #server_message {
 	display: inline-block;
 	float: top;
-	border-style: solid;
-	border-radius: 10px;
-	border-color: #C55;
-	border-width: 2px;
-	background-color: #E77;
 	color: #500;
 }
