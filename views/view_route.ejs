@@ -10,9 +10,11 @@
     <script src="https://www.google.com/jsapi"></script>
   </head>
   <body>
+    <p><a href="../browse">&lt;Back to Browse</a></p>
     <p id="server_message"><%= msg%></p>
     <h1><%= route_name%></h1>
-    <p id="author">by <%= username%></p>
+    <% var authorLink = '../user/' + username; %>
+    <p id="author">by <a href="<%= authorLink%>"><%= username%></a></p>
     <form action="" method="post">
       <input id="save_route" type="submit" name="save_route" value="Save Route">
     </form>
